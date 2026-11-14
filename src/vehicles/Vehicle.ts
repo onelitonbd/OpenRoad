@@ -396,6 +396,15 @@ export class Vehicle {
     }
   }
 
+  shiftOrigin(shift: THREE.Vector3) {
+    this.group.position.sub(shift);
+    this.state.position.sub(shift);
+    if (this.rigidBody) {
+      const pos = this.rigidBody.translation();
+      this.rigidBody.setTranslation({ x: pos.x - shift.x, y: pos.y - shift.y, z: pos.z - shift.z }, true);
+    }
+  }
+
   getPosition(): THREE.Vector3 { return this.group.position; }
 
   applyTuning(key: 'engineScale' | 'gripScale' | 'steerScale', value: number) {
