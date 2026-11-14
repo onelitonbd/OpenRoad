@@ -10,7 +10,10 @@
     "preview": "vite preview --host 0.0.0.0",
     "typecheck": "tsc --noEmit",
     "test:vehicle": "rolldown tools/vehicle-test.ts --format esm --platform node --file tools/out/vehicle-test.mjs && node tools/out/vehicle-test.mjs",
-    "test:rapier": "rolldown tools/rapier-demo-test.ts --format esm --platform node --file tools/out/rapier-demo.mjs && node tools/out/rapier-demo.mjs"
+    "test:rapier": "rolldown tools/rapier-demo-test.ts --format esm --platform node --file tools/out/rapier-demo.mjs && node tools/out/rapier-demo.mjs",
+    "test:terrain": "rolldown tools/terrain-test.ts --format esm --platform node --file tools/out/terrain-test.mjs && node tools/out/terrain-test.mjs",
+    "test:world": "rolldown tools/world-test.ts --format esm --platform node --file tools/out/world-test.mjs && node tools/out/world-test.mjs",
+    "test:roads": "rolldown tools/road-test.ts --format esm --platform node --file tools/out/road-test.mjs && node tools/out/road-test.mjs"
   },
   "dependencies": {
     "@dimforge/rapier3d-compat": "^0.21.0",
