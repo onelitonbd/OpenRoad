@@ -1,0 +1,22 @@
+{
+  "name": "open-road",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "three": "^0.160.0",
+    "@dimforge/rapier3d-compat": "^0.15.1",
+    "simplex-noise": "^4.0.3"
+  },
+  "devDependencies": {
+    "typescript": "^5.4.5",
+    "vite": "^5.3.3",
+    "@types/three": "^0.160.0"
+  }
+}

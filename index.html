@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <title>Open Road — Drive the Horizon</title>
+    <meta name="description" content="Free browser 3D open-world driving game — cartoon arcade-sim, huge procedural world." />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="stylesheet" href="/src/ui/styles.css" />
+  </head>
+  <body>
+    <div id="app">
+      <canvas id="game-canvas"></canvas>
+      <div id="ui-root"></div>
+      <div id="loading-screen" class="loading-screen">
+        <div class="loading-card">
+          <h1 class="loading-title">OPEN ROAD</h1>
+          <p class="loading-subtitle">Horizon Rush — Phase 0</p>
+          <div class="loading-bar"><div id="loading-bar-fill" class="loading-bar-fill"></div></div>
+          <p id="loading-text" class="loading-text">Initializing...</p>
+          <p class="loading-tip" id="loading-tip">Tip: Press F3 for debug. C to change camera. R to reset car.</p>
+        </div>
+      </div>
+    </div>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>
