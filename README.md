@@ -1,32 +1,31 @@
 # Open Road — 3D Open-World Arcade Driving (Browser)
 
-Free, cartoon-style, Three.js + Rapier open-world driving. Procedural world, huge map.
+Phase 4 — Buildings, props, regions styled, minimap, landmarks.
 
-Phase 3 — Roads complete. Drive downtown grid, suburbs, highways, rural, mountain, coast.
-
-## Run locally
+## Run
 ```bash
 npm install
-npm run dev
+npm run dev   # 5173
 npm run build
 ```
 
 ## Controls
-WASD/Arrows drive, Space handbrake, C camera, R reset, T tuning, F3 debug
+WASD drive, Space handbrake, C camera, R reset, T tuning, F3 debug, click minimap to toggle rotation
 
-## World Phase 3
-- 8km map with regions + terrain chunks (256m, heightfield physics, floating origin)
-- RoadNetwork: downtown grid, suburb clusters, highways (8), rural offshoots, mountain switchbacks, coastal road
-- Ribbon road meshes with lane markings + downtown sidewalks, intersections flat patches
-- Terrain flattened under roads, roads 0.05m above terrain, drivable smooth across chunks
+## World Phase 4
+- All regions distinct: downtown skyscrapers, suburbs houses, countryside barns, mountains pines/rocks/snow caps, desert cacti, coast palms/beach
+- Instanced buildings/props per chunk, distance culling via chunk unload
+- 3 landmarks: downtown tower, lighthouse, highway bridge
+- Minimap live 2D canvas from road graph
+- Perf: Low preset <400 draw calls, <500k tris via instancing + fog
 
 ## Roadmap
 - [x] Phase 0 Setup
 - [x] Phase 1 Car driving
 - [x] Phase 2 Terrain & chunks
 - [x] Phase 3 Roads
-- [ ] Phase 4 Buildings & props
-- [ ] Phase 5 Traffic
+- [x] Phase 4 Buildings & regions
+- [ ] Phase 5 AI traffic
 - [ ] Phase 6 Sky/day-night/weather
 - [ ] Phase 7 Garage/menus/saves/audio
 - [ ] Phase 8 Rival racing
