@@ -1,0 +1,25 @@
+{
+  "name": "openroad",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "description": "Open Road - a browser-based 3D open-world arcade driving game",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview --host 0.0.0.0",
+    "typecheck": "tsc --noEmit",
+    "test:vehicle": "rolldown tools/vehicle-test.ts --format esm --platform node --file tools/out/vehicle-test.mjs && node tools/out/vehicle-test.mjs",
+    "test:rapier": "rolldown tools/rapier-demo-test.ts --format esm --platform node --file tools/out/rapier-demo.mjs && node tools/out/rapier-demo.mjs"
+  },
+  "dependencies": {
+    "@dimforge/rapier3d-compat": "^0.21.0",
+    "simplex-noise": "^4.0.3",
+    "three": "^0.187.0"
+  },
+  "devDependencies": {
+    "@types/three": "^0.187.0",
+    "typescript": "^5.9.3",
+    "vite": "^8.3.8"
+  }
+}

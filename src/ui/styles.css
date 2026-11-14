@@ -1,0 +1,699 @@
+/* ==========================================================================
+   Open Road - UI styles
+   Bold, bright, rounded and cartoon friendly. Plain CSS, no framework.
+   ========================================================================== */
+
+:root {
+  --ui-font: 'Trebuchet MS', 'Segoe UI', system-ui, -apple-system, sans-serif;
+  --accent: #ffb020;
+  --accent-2: #ff5d5d;
+  --good: #4ade80;
+  --bad: #ff6b6b;
+  --panel: rgba(14, 20, 38, 0.86);
+  --panel-solid: #131b30;
+  --stroke: rgba(255, 255, 255, 0.14);
+  --text: #f2f6ff;
+  --muted: #9fb0d0;
+  --radius: 14px;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: #0b1020;
+  color: var(--text);
+  font-family: var(--ui-font);
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  overscroll-behavior: none;
+}
+
+#app {
+  position: fixed;
+  inset: 0;
+}
+
+#game-canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+  touch-action: none;
+}
+
+#ui-root {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+#ui-root > * {
+  pointer-events: auto;
+}
+
+.hidden {
+  display: none !important;
+}
+
+/* ---------- shared panel / button styling ---------- */
+
+.panel {
+  background: var(--panel);
+  border: 1px solid var(--stroke);
+  border-radius: var(--radius);
+  backdrop-filter: blur(8px);
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.45);
+}
+
+.btn {
+  appearance: none;
+  border: none;
+  border-radius: 10px;
+  padding: 12px 22px;
+  font-family: var(--ui-font);
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: 0.4px;
+  color: #14203a;
+  background: linear-gradient(180deg, #ffd479, var(--accent));
+  cursor: pointer;
+  transition: transform 0.08s ease, filter 0.15s ease;
+  box-shadow: 0 4px 0 rgba(0, 0, 0, 0.28);
+}
+
+.btn:hover {
+  filter: brightness(1.07);
+}
+
+.btn:active {
+  transform: translateY(2px);
+  box-shadow: 0 2px 0 rgba(0, 0, 0, 0.28);
+}
+
+.btn.secondary {
+  color: var(--text);
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid var(--stroke);
+}
+
+.btn.danger {
+  color: #fff;
+  background: linear-gradient(180deg, #ff8080, #e04b4b);
+}
+
+.btn.small {
+  padding: 7px 13px;
+  font-size: 13px;
+}
+
+.btn:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+/* ---------- HUD ---------- */
+
+#hud {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  font-variant-numeric: tabular-nums;
+}
+
+.hud-speedometer {
+  position: absolute;
+  right: 18px;
+  bottom: 18px;
+  width: 190px;
+  height: 190px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 50% 45%, rgba(30, 44, 78, 0.92), rgba(8, 12, 26, 0.94));
+  border: 3px solid rgba(255, 255, 255, 0.14);
+  box-shadow: 0 12px 34px rgba(0, 0, 0, 0.55);
+  display: grid;
+  place-items: center;
+}
+
+.hud-speed-value {
+  font-size: 52px;
+  font-weight: 800;
+  line-height: 1;
+  margin-top: 6px;
+}
+
+.hud-speed-unit {
+  font-size: 12px;
+  color: var(--muted);
+  letter-spacing: 3px;
+  text-transform: uppercase;
+}
+
+.hud-gear {
+  position: absolute;
+  top: 14px;
+  right: 22px;
+  font-size: 20px;
+  font-weight: 800;
+  color: var(--accent);
+}
+
+.hud-rpm {
+  position: absolute;
+  left: 50%;
+  bottom: 18px;
+  transform: translateX(-50%);
+  width: 260px;
+  height: 12px;
+  border-radius: 8px;
+  background: rgba(8, 12, 26, 0.8);
+  border: 1px solid var(--stroke);
+  overflow: hidden;
+}
+
+.hud-rpm-fill {
+  height: 100%;
+  width: 0%;
+  background: linear-gradient(90deg, #4ade80, #ffd166 65%, #ff5d5d);
+  transition: width 0.05s linear;
+}
+
+.hud-clock {
+  position: absolute;
+  top: 16px;
+  left: 18px;
+  padding: 8px 14px;
+  border-radius: 12px;
+  background: var(--panel);
+  border: 1px solid var(--stroke);
+  font-size: 15px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.hud-weather {
+  font-size: 20px;
+}
+
+.hud-minimap {
+  position: absolute;
+  top: 16px;
+  right: 18px;
+  width: 170px;
+  height: 170px;
+  border-radius: 50%;
+  overflow: hidden;
+  background: rgba(8, 12, 26, 0.8);
+  border: 3px solid rgba(255, 255, 255, 0.14);
+  box-shadow: 0 10px 26px rgba(0, 0, 0, 0.5);
+}
+
+.hud-minimap canvas {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.hud-hint {
+  position: absolute;
+  left: 18px;
+  bottom: 18px;
+  font-size: 12px;
+  color: var(--muted);
+  background: rgba(8, 12, 26, 0.55);
+  padding: 7px 11px;
+  border-radius: 8px;
+  line-height: 1.6;
+}
+
+.hud-race {
+  position: absolute;
+  top: 200px;
+  right: 18px;
+  padding: 10px 14px;
+  border-radius: 12px;
+  background: var(--panel);
+  border: 1px solid var(--stroke);
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1.5;
+  text-align: right;
+}
+
+.hud-toast {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  padding: 14px 26px;
+  border-radius: 12px;
+  background: var(--panel);
+  border: 1px solid var(--stroke);
+  font-size: 20px;
+  font-weight: 700;
+  opacity: 0;
+  transition: opacity 0.25s ease;
+}
+
+.hud-toast.show {
+  opacity: 1;
+}
+
+/* ---------- overlays / menus ---------- */
+
+.screen {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(6, 10, 22, 0.72);
+  backdrop-filter: blur(3px);
+  z-index: 20;
+}
+
+.screen.transparent {
+  background: rgba(6, 10, 22, 0.35);
+  backdrop-filter: none;
+}
+
+.menu-card {
+  min-width: 340px;
+  max-width: 92vw;
+  padding: 28px 32px;
+  text-align: center;
+}
+
+.menu-title {
+  font-size: 46px;
+  font-weight: 900;
+  letter-spacing: 2px;
+  margin: 0 0 4px;
+  background: linear-gradient(180deg, #fff, var(--accent));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.menu-subtitle {
+  color: var(--muted);
+  margin: 0 0 22px;
+  font-size: 14px;
+  letter-spacing: 1px;
+}
+
+.menu-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 11px;
+}
+
+.menu-buttons .btn {
+  width: 100%;
+}
+
+.menu-row {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  margin-top: 18px;
+}
+
+.setting-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  margin: 12px 0;
+  font-size: 14px;
+  color: var(--muted);
+}
+
+.setting-row label {
+  flex: 0 0 auto;
+  min-width: 118px;
+  text-align: left;
+}
+
+.setting-row input[type='range'] {
+  flex: 1 1 auto;
+  accent-color: var(--accent);
+}
+
+.setting-row select {
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--text);
+  border: 1px solid var(--stroke);
+  border-radius: 8px;
+  padding: 6px 10px;
+  font-family: var(--ui-font);
+  font-size: 13px;
+}
+
+.setting-value {
+  min-width: 46px;
+  text-align: right;
+  color: var(--text);
+  font-weight: 700;
+}
+
+/* ---------- garage ---------- */
+
+.garage {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 20px;
+  width: min(940px, 96vw);
+}
+
+.garage-title {
+  font-size: 30px;
+  font-weight: 900;
+  letter-spacing: 2px;
+}
+
+.garage-body {
+  display: flex;
+  gap: 18px;
+  width: 100%;
+  align-items: stretch;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.garage-info {
+  flex: 1 1 320px;
+  max-width: 430px;
+  padding: 18px 20px;
+  text-align: left;
+}
+
+.garage-name {
+  font-size: 25px;
+  font-weight: 800;
+  margin: 0 0 2px;
+}
+
+.garage-class {
+  color: var(--accent);
+  font-size: 13px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  margin-bottom: 14px;
+}
+
+.stat-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 7px 0;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.stat-row span:first-child {
+  width: 78px;
+}
+
+.stat-bar {
+  flex: 1;
+  height: 9px;
+  border-radius: 5px;
+  background: rgba(255, 255, 255, 0.1);
+  overflow: hidden;
+}
+
+.stat-bar i {
+  display: block;
+  height: 100%;
+  border-radius: 5px;
+  background: linear-gradient(90deg, var(--accent), var(--accent-2));
+}
+
+.color-row {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 14px;
+}
+
+.color-dot {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  border: 2px solid rgba(255, 255, 255, 0.28);
+  cursor: pointer;
+}
+
+.color-dot.selected {
+  border-color: #fff;
+  transform: scale(1.15);
+  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.35);
+}
+
+.car-list {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: center;
+  max-width: 760px;
+}
+
+.car-chip {
+  padding: 7px 13px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid var(--stroke);
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.car-chip.selected {
+  background: var(--accent);
+  color: #14203a;
+  border-color: transparent;
+}
+
+/* ---------- loading ---------- */
+
+#loading {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  background: linear-gradient(180deg, #101a33, #070b16);
+  z-index: 50;
+}
+
+#loading .bar {
+  width: min(360px, 70vw);
+  height: 12px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.12);
+  overflow: hidden;
+}
+
+#loading .bar i {
+  display: block;
+  height: 100%;
+  width: 0%;
+  background: linear-gradient(90deg, var(--accent), var(--accent-2));
+  transition: width 0.2s ease;
+}
+
+#loading .tip {
+  color: var(--muted);
+  font-size: 13px;
+  max-width: 420px;
+  text-align: center;
+  padding: 0 20px;
+}
+
+/* ---------- debug overlay ---------- */
+
+.debug-overlay {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  z-index: 60;
+  padding: 8px 12px;
+  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.72);
+  color: #b9f7c0;
+  font-family: 'Consolas', 'Menlo', monospace;
+  font-size: 12px;
+  line-height: 1.5;
+  white-space: pre;
+  pointer-events: none;
+}
+
+/* ---------- touch controls ---------- */
+
+.touch-controls {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 15;
+}
+
+.touch-btn {
+  position: absolute;
+  pointer-events: auto;
+  border-radius: 50%;
+  border: 2px solid rgba(255, 255, 255, 0.35);
+  background: rgba(18, 26, 48, 0.55);
+  color: #fff;
+  font-family: var(--ui-font);
+  font-weight: 800;
+  font-size: 15px;
+  display: grid;
+  place-items: center;
+  user-select: none;
+}
+
+.touch-btn.active {
+  background: rgba(255, 176, 32, 0.75);
+  color: #14203a;
+}
+
+.touch-btn.throttle {
+  right: 18px;
+  bottom: 210px;
+  width: 92px;
+  height: 92px;
+}
+
+.touch-btn.brake {
+  right: 120px;
+  bottom: 210px;
+  width: 76px;
+  height: 76px;
+}
+
+.touch-btn.left {
+  left: 18px;
+  bottom: 190px;
+  width: 76px;
+  height: 76px;
+}
+
+.touch-btn.right {
+  left: 104px;
+  bottom: 190px;
+  width: 76px;
+  height: 76px;
+}
+
+.touch-btn.handbrake {
+  right: 200px;
+  bottom: 300px;
+  width: 62px;
+  height: 62px;
+  font-size: 12px;
+}
+
+.touch-btn.small-action {
+  width: 54px;
+  height: 54px;
+  font-size: 11px;
+}
+
+/* ---------- photo mode ---------- */
+
+.photo-panel {
+  position: absolute;
+  right: 18px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 250px;
+  padding: 16px 18px;
+  z-index: 18;
+}
+
+.photo-panel h3 {
+  margin: 0 0 10px;
+  font-size: 16px;
+  letter-spacing: 1px;
+}
+
+/* ---------- tuning panel (developer tool) ---------- */
+
+.tuning-panel {
+  position: absolute;
+  left: 18px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 280px;
+  padding: 14px 16px;
+  z-index: 18;
+  font-size: 12px;
+}
+
+.tuning-panel h3 {
+  margin: 0 0 8px;
+  font-size: 15px;
+}
+
+.tuning-panel .stat-row span:first-child {
+  width: 96px;
+  font-size: 11px;
+}
+
+/* ---------- race results ---------- */
+
+.results-list {
+  margin: 14px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.result-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 8px 14px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.07);
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.result-row.player {
+  background: rgba(255, 176, 32, 0.25);
+  border: 1px solid rgba(255, 176, 32, 0.5);
+}
+
+@media (max-width: 720px) {
+  .hud-minimap {
+    width: 108px;
+    height: 108px;
+  }
+  .hud-speedometer {
+    width: 130px;
+    height: 130px;
+  }
+  .hud-speed-value {
+    font-size: 36px;
+  }
+  .hud-hint {
+    display: none;
+  }
+  .menu-title {
+    font-size: 34px;
+  }
+}
