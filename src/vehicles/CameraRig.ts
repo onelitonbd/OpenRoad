@@ -41,8 +41,14 @@ export class CameraRig {
   /** Set to true while the photo mode drives the camera manually. */
   manual = false;
 
-  constructor(aspect: number) {
-    this.camera = new THREE.PerspectiveCamera(62, aspect, 0.25, 3000);
+  /**
+   * The rig uses the camera of the renderer, so there is only ever one
+   * camera in the game.
+   */
+  constructor(camera: THREE.PerspectiveCamera) {
+    this.camera = camera;
+    this.camera.fov = 62;
+    this.camera.updateProjectionMatrix();
 
     this.specs = {
       chase: {
@@ -172,5 +178,10 @@ export class CameraRig {
   resize(aspect: number): void {
     this.camera.aspect = aspect;
     this.camera.updateProjectionMatrix();
+  }
+
+  /** The field of view of the camera (used by the photo mode). */
+  get fov(): number {
+    return this.camera.fov;
   }
 }

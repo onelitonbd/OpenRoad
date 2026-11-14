@@ -63,6 +63,8 @@ function drawRoadTexture(lanes: number, width: number, type: RoadType): THREE.Te
   }
 
   const texture = new THREE.CanvasTexture(canvas);
+  // The canvas is drawn in sRGB, so the texture has to be marked as such.
+  texture.colorSpace = THREE.SRGBColorSpace;
   texture.wrapS = THREE.ClampToEdgeWrapping;
   texture.wrapT = THREE.RepeatWrapping;
   texture.anisotropy = 4;
@@ -143,12 +145,14 @@ export function buildRoadGeometry(edge: RoadEdge): THREE.BufferGeometry {
       const c = a + 2;
       const d = a + 3;
       const t = i * 6;
+      // The winding has to face up, otherwise the road is invisible from
+      // above (Three.js skips the back faces).
       indices[t] = a;
-      indices[t + 1] = c;
-      indices[t + 2] = b;
+      indices[t + 1] = b;
+      indices[t + 2] = c;
       indices[t + 3] = b;
-      indices[t + 4] = c;
-      indices[t + 5] = d;
+      indices[t + 4] = d;
+      indices[t + 5] = c;
     }
   }
 
@@ -195,9 +199,10 @@ export function buildIntersectionGeometry(
   }
 
   for (let i = 0; i < segments; i++) {
+    // Wound so the patch faces up.
     indices[i * 3] = 0;
-    indices[i * 3 + 1] = i + 1;
-    indices[i * 3 + 2] = i + 2;
+    indices[i * 3 + 1] = i + 2;
+    indices[i * 3 + 2] = i + 1;
   }
 
   const geometry = new THREE.BufferGeometry();

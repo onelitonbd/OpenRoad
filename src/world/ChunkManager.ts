@@ -276,6 +276,32 @@ export class ChunkManager {
     return this.chunks.get(`${cx},${cz}`);
   }
 
+  /** Is the chunk at a position already loaded? */
+  isLoadedAt(x: number, z: number): boolean {
+    const cx = Math.floor(x / CHUNK_SIZE);
+    const cz = Math.floor(z / CHUNK_SIZE);
+    return this.chunks.has(`${cx},${cz}`);
+  }
+
+  /**
+   * Make sure the chunk under a position exists right now.
+   *
+   * The chunk is generated on the main thread (the worker would need a few
+   * milliseconds and the car must not fall through the world in the
+   * meantime). It is only used for the start of the game.
+   */
+  ensureChunkAt(x: number, z: number): void {
+    const cx = Math.floor(x / CHUNK_SIZE);
+    const cz = Math.floor(z / CHUNK_SIZE);
+    const key = `${cx},${cz}`;
+    if (this.chunks.has(key) || this.inFlight.has(key)) return;
+    this.buildChunk(
+      cx,
+      cz,
+      generateChunkData(this.terrain, cx, cz, settings.preset.terrainResolution),
+    );
+  }
+
   dispose(): void {
     for (const chunk of this.chunks.values()) this.disposeChunk(chunk);
     this.chunks.clear();

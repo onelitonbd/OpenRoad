@@ -20,7 +20,8 @@ export class DebugOverlay {
   private visible = false;
   private frames = 0;
   private fpsTimer = 0;
-  private fps = 0;
+  /** The current frames per second (public so the smoke test can read it). */
+  fps = 0;
   private frameTime = 0;
 
   /** Extra live values pushed by the game each frame. */

@@ -12,6 +12,16 @@ export const SEA_LEVEL = 0;
 export const COAST_LINE = 3000;
 
 /**
+ * Converts a colour from sRGB to linear space.
+ * The terrain colours are picked like in a colour picker (sRGB), but the
+ * shader works with linear values.
+ */
+function srgbToLinear(value: number): number {
+  const c = Math.max(0, Math.min(1, value));
+  return c <= 0.04045 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4);
+}
+
+/**
  * The terrain height function.
  *
  * `height(x, z)` is the single source of truth for the shape of the world.
@@ -87,7 +97,9 @@ export class Terrain {
     const ridgeNoise = this.fbm(this.noiseB, x + 5000, z - 3000, 4, 0.0016);
     const ridge = 1 - Math.abs(ridgeNoise) * 2;
 
-    let h = 0;
+    // The continent sits a few metres above the sea, so the city and the
+    // roads are never flooded.
+    let h = 5;
 
     // Downtown is completely flat.
     h += w.downtown * 0;
@@ -107,7 +119,7 @@ export class Terrain {
 
     // Coast: the land slopes down into the sea.
     const coastT = Math.max(0, (z - (COAST_LINE - 350)) / 350);
-    const coastHeight = -Math.pow(coastT, 1.6) * 26 - base * 1.5;
+    const coastHeight = -Math.pow(coastT, 1.6) * 31 - base * 1.5;
     h += w.coast * coastHeight;
 
     // Beyond the coast line the ground keeps going down.
@@ -205,6 +217,9 @@ export class Terrain {
 
     // A little per-vertex variation so large areas are not completely flat.
     const v = this.noiseC(x * 0.08, z * 0.08) * 0.035;
-    return [r + v, g + v, b + v];
+
+    // The colours above are written as sRGB (that is how they look in a
+    // colour picker), but the vertex colours have to be linear.
+    return [srgbToLinear(r + v), srgbToLinear(g + v), srgbToLinear(b + v)];
   }
 }

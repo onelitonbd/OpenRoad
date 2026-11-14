@@ -4,6 +4,7 @@ import { Input } from './Input';
 import { FixedTimeStep } from './Time';
 import { DebugOverlay } from '../utils/debug';
 import { HUD } from '../ui/HUD';
+import { Minimap } from '../ui/Minimap';
 import { TuningPanel } from '../ui/TuningPanel';
 import { PhysicsWorld } from '../physics/PhysicsWorld';
 import { Vehicle } from '../vehicles/Vehicle';
@@ -15,6 +16,8 @@ import { bus } from './EventBus';
 import { settings } from './Settings';
 import { ChunkManager } from '../world/ChunkManager';
 import { RoadRenderer } from '../world/RoadMesh';
+import { BuildingManager } from '../world/Buildings';
+import { PropManager } from '../world/Props';
 import { Water } from '../world/Water';
 import { WORLD_HALF } from '../world/Terrain';
 
@@ -37,6 +40,7 @@ export class Game {
   state: GameState = 'loading';
 
   hud!: HUD;
+  minimap!: Minimap;
   tuningPanel!: TuningPanel;
 
   physics!: PhysicsWorld;
@@ -49,7 +53,12 @@ export class Game {
   water!: Water;
   /** Draws the road network around the player. */
   roadRenderer!: RoadRenderer;
+  /** The houses and towers of the world. */
+  buildings!: BuildingManager;
+  /** The trees, lamps and rocks of the world. */
+  props!: PropManager;
 
+  private readonly uiRoot: HTMLElement;
   private readonly time = new FixedTimeStep(60, 5);
   private lastTime = 0;
   private running = false;
@@ -62,12 +71,14 @@ export class Game {
   constructor(canvas: HTMLCanvasElement, uiRoot: HTMLElement) {
     this.renderer = new Renderer(canvas);
     this.input = new Input();
+    this.uiRoot = uiRoot;
     this.hud = new HUD(uiRoot);
     this.tuningPanel = new TuningPanel(uiRoot);
   }
 
   /** Async setup (loads Rapier WASM). */
   async init(): Promise<void> {
+
     this.physics = await PhysicsWorld.create();
 
     // --- lighting ---
@@ -100,6 +111,14 @@ export class Game {
     this.roadRenderer = new RoadRenderer(this.world.roads);
     this.renderer.scene.add(this.roadRenderer.group);
 
+    this.buildings = new BuildingManager(this.world.roads, this.world.terrain, this.physics);
+    this.renderer.scene.add(this.buildings.group);
+
+    this.props = new PropManager(this.world.roads, this.world.terrain);
+    this.renderer.scene.add(this.props.group);
+
+    this.minimap = new Minimap(this.uiRoot, this.world.roads);
+
     // --- player car ---
     const mesh = buildCarMesh(COMET_GT);
     this.renderer.scene.add(mesh.group);
@@ -108,10 +127,13 @@ export class Game {
 
     // Spawn on the border between downtown and the suburbs.
     const spawn = this.findSpawnPoint();
+    // The chunk under the spawn has to exist before the car is dropped, so
+    // the car can never fall through the world at the start.
+    this.world.ensureChunkAt(spawn.x, spawn.z);
     this.vehicle.resetTo(spawn.x, spawn.y + 1.5, spawn.z, spawn.heading);
 
     this.playerController = new PlayerController();
-    this.cameraRig = new CameraRig(this.renderer.aspect);
+    this.cameraRig = new CameraRig(this.renderer.camera);
     this.cameraRig.snapTo(this.vehicle);
 
     this.tuningPanel.attach(this.vehicle);
@@ -208,6 +230,17 @@ export class Game {
 
   /** One fixed physics step. */
   private fixedUpdate(dt: number): void {
+    const position = this.vehicle.body.translation();
+
+    // While the terrain under the car is still streaming in, the car is held
+    // in place. Without this the car would fall through the missing chunk
+    // and could never get back on the ground.
+    if (!this.world.isLoadedAt(position.x, position.z)) {
+      const ground = this.world.heightAt(position.x, position.z);
+      this.vehicle.holdAt(position.x, ground + this.vehicle.rideHeight, position.z);
+      return;
+    }
+
     this.playerController.apply(this.input.state, this.vehicle, dt);
     this.vehicle.prepareStep(dt);
     this.vehicle.applyPhysics(dt);
@@ -219,9 +252,11 @@ export class Game {
   private renderUpdate(dt: number): void {
     const position = this.vehicle.body.translation();
 
-    // Stream the terrain and the roads around the player.
+    // Stream the terrain, the roads, the buildings and the props.
     this.world.update(position.x, position.z);
     this.roadRenderer.update(position.x, position.z, settings.preset.chunkRadius * 256 + 400);
+    this.buildings.update(position.x, position.z);
+    this.props.update(position.x, position.z);
     this.water.update(dt);
     this.water.follow(position.x, position.z);
 
@@ -238,6 +273,9 @@ export class Game {
       rpmRatio: this.vehicle.rpmRatio,
     });
     this.hud.updateTimers(dt);
+
+    // The minimap follows the player.
+    this.minimap.update(position.x, position.z, this.vehicle.heading);
 
     // Debug information.
     this.debug.extra.chunksLoaded = this.world.loadedCount;
@@ -265,6 +303,9 @@ export class Game {
     this.world?.dispose();
     this.water?.dispose();
     this.roadRenderer?.dispose();
+    this.buildings?.dispose();
+    this.props?.dispose();
+    this.minimap?.dispose();
   }
 }
 

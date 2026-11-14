@@ -221,6 +221,11 @@ export class Vehicle {
     return this.slipAmount;
   }
 
+  /** The height of the car body above the ground (the ride height). */
+  get rideHeight(): number {
+    return this.config.groundClearance;
+  }
+
   get isAirborne(): boolean {
     return this.airborne;
   }
@@ -489,6 +494,30 @@ export class Vehicle {
   }
 
   /** Put the car back on the ground at the given position, upright. */
+  /**
+   * The direction the car is pointing at (0 = +Z, growing clockwise).
+   * The minimap uses it to rotate the map.
+   */
+  get heading(): number {
+    // Rotate the local forward vector (+Z) with the car quaternion.
+    const rotation = this.body.rotation();
+    this.tmpQuat.set(rotation.x, rotation.y, rotation.z, rotation.w);
+    this.tmpVec.set(0, 0, 1).applyQuaternion(this.tmpQuat);
+    return Math.atan2(this.tmpVec.x, this.tmpVec.z);
+  }
+
+  /**
+   * Hold the car at a fixed height.
+   *
+   * It is used while the terrain under the car is still streaming in: the
+   * car keeps its place instead of falling through the world.
+   */
+  holdAt(x: number, y: number, z: number): void {
+    this.body.setTranslation({ x, y, z }, true);
+    this.body.setLinvel({ x: 0, y: 0, z: 0 }, true);
+    this.body.setAngvel({ x: 0, y: 0, z: 0 }, true);
+  }
+
   resetTo(x: number, y: number, z: number, heading = 0): void {
     const q = new THREE.Quaternion().setFromEuler(new THREE.Euler(0, heading, 0));
     this.body.setTranslation({ x, y, z }, true);
