@@ -50,7 +50,7 @@ page.on('pageerror', (error) => errors.push(`pageerror: ${error.message}`));
 await page.goto(url, { waitUntil: 'load', timeout: 60000 });
 
 // Wait until the game is ready.
-await page.waitForFunction(() => window.__openroad?.ready === true, { timeout: 120000 });
+await page.waitForFunction(() => window.__openroad?.ready === true, undefined, { timeout: 120000 });
 
 // Let the world stream in.
 await page.waitForTimeout(6000);

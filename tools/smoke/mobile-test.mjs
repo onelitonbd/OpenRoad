@@ -60,7 +60,7 @@ const check = (name, ok, detail = '') => {
 };
 
 await page.goto(url, { waitUntil: 'load', timeout: 60000 });
-await page.waitForFunction(() => window.__openroad?.ready === true, { timeout: 120000 });
+await page.waitForFunction(() => window.__openroad?.ready === true, undefined, { timeout: 120000 });
 await page.waitForTimeout(4000);
 
 // --- the controls have to show up -------------------------------------------
@@ -138,7 +138,7 @@ await page.mouse.up();
 // The state is rebuilt once per frame, and the test browser is slow, so
 // wait for the frame that puts the steering back.
 const steerReleased = await page
-  .waitForFunction(() => Math.abs(window.openRoad.input.state.steer) < 0.05, { timeout: 10000 })
+  .waitForFunction(() => Math.abs(window.openRoad.input.state.steer) < 0.05, undefined, { timeout: 10000 })
   .then(() => true)
   .catch(() => false);
 const steerBack = await page.evaluate(() => window.openRoad.input.state.steer);
@@ -150,7 +150,7 @@ await page.click('.touch-btn.small-action');
 // The software renderer is slow, so wait for the next frame instead of a
 // fixed time.
 const cameraChanged = await page
-  .waitForFunction(() => window.openRoad.cameraRig.mode !== 'chase', { timeout: 10000 })
+  .waitForFunction(() => window.openRoad.cameraRig.mode !== 'chase', undefined, { timeout: 10000 })
   .then(() => true)
   .catch(() => false);
 const cameraMode = await page.evaluate(() => window.openRoad.cameraRig.mode);
@@ -197,7 +197,7 @@ check(
 if (fullscreen.active) {
   await page.click('.touch-btn.touch-fullscreen');
   const left = await page
-    .waitForFunction(() => !document.fullscreenElement, { timeout: 5000 })
+    .waitForFunction(() => !document.fullscreenElement, undefined, { timeout: 5000 })
     .then(() => true)
     .catch(() => false);
   if (!left) await page.evaluate(() => document.exitFullscreen?.());
@@ -221,7 +221,7 @@ const portraitContext = await browser.newContext({
 const portraitPage = await portraitContext.newPage();
 portraitPage.on('pageerror', (error) => errors.push(`pageerror: ${error.message}`));
 await portraitPage.goto(url, { waitUntil: 'load', timeout: 60000 });
-await portraitPage.waitForFunction(() => window.__openroad?.ready === true, { timeout: 120000 });
+await portraitPage.waitForFunction(() => window.__openroad?.ready === true, undefined, { timeout: 120000 });
 await portraitPage.waitForTimeout(2500);
 
 const portrait = await portraitPage.evaluate(() => {

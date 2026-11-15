@@ -13,7 +13,7 @@ const browser = await playwright.launch({ executablePath, headless: true, args: 
 const page = await browser.newPage({ viewport: { width: 640, height: 360 } });
 page.on('pageerror', (e) => console.log('[pageerror]', e.message));
 await page.goto(url, { waitUntil: 'load', timeout: 60000 });
-await page.waitForFunction(() => window.__openroad?.ready === true, { timeout: 120000 });
+await page.waitForFunction(() => window.__openroad?.ready === true, undefined, { timeout: 120000 });
 await page.waitForTimeout(10000);
 
 const result = await page.evaluate(async () => {

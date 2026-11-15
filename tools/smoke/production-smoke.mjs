@@ -94,7 +94,7 @@ const report = {
 
 try {
   await page.goto(url, { waitUntil: 'load', timeout: 120000 });
-  await page.waitForFunction(() => window.__openroad?.ready === true, { timeout: 180000 });
+  await page.waitForFunction(() => window.__openroad?.ready === true, undefined, { timeout: 180000 });
 
   // Let the world stream in and the traffic spawn.
   await page.waitForTimeout(8000);
@@ -142,6 +142,10 @@ try {
     mkdirSync(dirname(shotPath), { recursive: true });
     await page.screenshot({ path: shotPath, timeout: 180000 });
   }
+
+  // The desktop page is closed before the phone is tested: the software
+  // renderer is slow and two pages at once would starve the phone.
+  await page.close();
 } catch (error) {
   errors.push(`fatal: ${error instanceof Error ? error.message : String(error)}`);
 }
@@ -161,7 +165,7 @@ try {
   phone.on('pageerror', (error) => errors.push(`mobile pageerror: ${error.message}`));
 
   await phone.goto(url, { waitUntil: 'load', timeout: 120000 });
-  await phone.waitForFunction(() => window.__openroad?.ready === true, { timeout: 180000 });
+  await phone.waitForFunction(() => window.__openroad?.ready === true, undefined, { timeout: 180000 });
   await phone.waitForTimeout(3000);
 
   const landscape = await phone.evaluate(() => {
@@ -185,7 +189,7 @@ try {
   });
   const portrait = await portraitContext.newPage();
   await portrait.goto(url, { waitUntil: 'load', timeout: 120000 });
-  await portrait.waitForFunction(() => window.__openroad?.ready === true, { timeout: 180000 });
+  await portrait.waitForFunction(() => window.__openroad?.ready === true, undefined, { timeout: 180000 });
   await portrait.waitForTimeout(2500);
   const portraitRotate = await portrait.evaluate(() => {
     const rotate = document.querySelector('.rotate-overlay');
@@ -199,6 +203,9 @@ try {
     rotateVisibleInPortrait: portraitRotate,
     rotateVisibleInLandscape: landscape.rotateVisible,
   };
+
+  await context.close();
+  await portraitContext.close();
 } catch (error) {
   errors.push(`mobile: ${error instanceof Error ? error.message : String(error)}`);
 } finally {

@@ -29,7 +29,7 @@ const page = await browser.newPage({ viewport: { width: 960, height: 540 } });
 page.on('pageerror', (e) => console.log('[pageerror]', e.message));
 
 await page.goto(url, { waitUntil: 'load', timeout: 60000 });
-await page.waitForFunction(() => window.__openroad?.ready === true, { timeout: 120000 });
+await page.waitForFunction(() => window.__openroad?.ready === true, undefined, { timeout: 120000 });
 await page.waitForTimeout(3000);
 
 // The places we want to see.

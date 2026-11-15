@@ -23,7 +23,7 @@ page.on('console', (m) => console.log(`[${m.type()}]`, m.text()));
 page.on('pageerror', (e) => console.log('[pageerror]', e.message));
 
 await page.goto(url, { waitUntil: 'load', timeout: 60000 });
-await page.waitForFunction(() => window.__openroad?.ready === true, { timeout: 120000 });
+await page.waitForFunction(() => window.__openroad?.ready === true, undefined, { timeout: 120000 });
 
 // Check the physics world directly.
 const probe = await page.evaluate(() => {
