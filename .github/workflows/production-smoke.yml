@@ -9,6 +9,7 @@ on:
       - arena/5e01b9ed-openroad
     paths:
       - .github/workflows/production-smoke.yml
+      - tools/smoke/production-smoke.mjs
   workflow_dispatch:
     inputs:
       url:
