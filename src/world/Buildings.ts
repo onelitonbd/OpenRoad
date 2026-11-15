@@ -424,6 +424,10 @@ export class BuildingManager {
       mesh.count = count;
       mesh.instanceMatrix.needsUpdate = true;
       if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true;
+      // The bounding sphere of an instanced mesh is cached. Without this the
+      // mesh keeps the (empty) sphere of the first frame and is culled away
+      // for the rest of the game.
+      mesh.computeBoundingSphere();
     }
 
     this.updateColliders(nearby, playerX, playerZ);

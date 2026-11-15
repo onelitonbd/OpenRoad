@@ -38,18 +38,28 @@ export function generateChunkData(
   const colors = new Float32Array(vertexCount * 3);
   const indices = new Uint32Array(n * n * 6);
 
-  // --- heights (cached so the colour pass can reuse them) ---
-  const heights = new Float32Array(vertexCount);
+  // The heights are sampled with a ring of extra vertices around the chunk.
+  // The slope (and with it the colour) needs the height of the neighbour
+  // chunk, otherwise a visible seam appears at the chunk border.
+  const grid = n + 3;
+  const heights = new Float32Array(grid * grid);
   let minY = Infinity;
   let maxY = -Infinity;
+
+  for (let j = -1; j <= n + 1; j++) {
+    const wz = originZ + j * step;
+    for (let i = -1; i <= n + 1; i++) {
+      const wx = originX + i * step;
+      heights[(j + 1) * grid + (i + 1)] = terrain.groundHeight(wx, wz);
+    }
+  }
 
   for (let j = 0; j <= n; j++) {
     const wz = originZ + j * step;
     for (let i = 0; i <= n; i++) {
       const wx = originX + i * step;
-      const h = terrain.groundHeight(wx, wz);
       const index = j * (n + 1) + i;
-      heights[index] = h;
+      const h = heights[(j + 1) * grid + (i + 1)];
       positions[index * 3] = wx;
       positions[index * 3 + 1] = h;
       positions[index * 3 + 2] = wz;
@@ -64,13 +74,13 @@ export function generateChunkData(
     for (let i = 0; i <= n; i++) {
       const wx = originX + i * step;
       const index = j * (n + 1) + i;
-      const h = heights[index];
+      const h = heights[(j + 1) * grid + (i + 1)];
 
       // Slope from the neighbouring heights.
-      const hLeft = heights[j * (n + 1) + Math.max(0, i - 1)];
-      const hRight = heights[j * (n + 1) + Math.min(n, i + 1)];
-      const hDown = heights[Math.max(0, j - 1) * (n + 1) + i];
-      const hUp = heights[Math.min(n, j + 1) * (n + 1) + i];
+      const hLeft = heights[(j + 1) * grid + i];
+      const hRight = heights[(j + 1) * grid + (i + 2)];
+      const hDown = heights[j * grid + (i + 1)];
+      const hUp = heights[(j + 2) * grid + (i + 1)];
       const dx = (hRight - hLeft) / (2 * step);
       const dz = (hUp - hDown) / (2 * step);
       const slope = Math.min(1, Math.hypot(dx, dz));

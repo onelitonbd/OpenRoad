@@ -31,6 +31,7 @@ export type ActionName =
   | 'photo'
   | 'debug'
   | 'tuning'
+  | 'minimap'
   | 'menu';
 
 const KEY_MAP: Record<string, ActionName> = {
@@ -88,6 +89,9 @@ export class Input {
         break;
       case 'KeyT':
         this.pressed.add('tuning');
+        break;
+      case 'KeyM':
+        this.pressed.add('minimap');
         break;
       case 'Enter':
         this.pressed.add('menu');

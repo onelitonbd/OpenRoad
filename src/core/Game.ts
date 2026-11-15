@@ -3,6 +3,7 @@ import { Renderer } from './Renderer';
 import { Input } from './Input';
 import { FixedTimeStep } from './Time';
 import { DebugOverlay } from '../utils/debug';
+import { RoadGraphDebug } from '../utils/roadDebug';
 import { HUD } from '../ui/HUD';
 import { Minimap } from '../ui/Minimap';
 import { TuningPanel } from '../ui/TuningPanel';
@@ -17,6 +18,7 @@ import { settings } from './Settings';
 import { ChunkManager } from '../world/ChunkManager';
 import { RoadRenderer } from '../world/RoadMesh';
 import { BuildingManager } from '../world/Buildings';
+import { Landmarks } from '../world/Landmarks';
 import { PropManager } from '../world/Props';
 import { Water } from '../world/Water';
 import { WORLD_HALF } from '../world/Terrain';
@@ -57,6 +59,10 @@ export class Game {
   buildings!: BuildingManager;
   /** The trees, lamps and rocks of the world. */
   props!: PropManager;
+  /** The hand-placed landmarks (the tower, the lighthouse, the mills). */
+  landmarks!: Landmarks;
+  /** Draws the road graph when the debug overlay is open. */
+  private roadDebug!: RoadGraphDebug;
 
   private readonly uiRoot: HTMLElement;
   private readonly time = new FixedTimeStep(60, 5);
@@ -117,7 +123,14 @@ export class Game {
     this.props = new PropManager(this.world.roads, this.world.terrain);
     this.renderer.scene.add(this.props.group);
 
-    this.minimap = new Minimap(this.uiRoot, this.world.roads);
+    this.landmarks = new Landmarks(this.world.terrain);
+    this.renderer.scene.add(this.landmarks.group);
+
+    // The road graph is only drawn while the debug overlay is open.
+    this.roadDebug = new RoadGraphDebug(this.world.roads);
+    this.renderer.scene.add(this.roadDebug.object);
+
+    this.minimap = new Minimap(this.uiRoot, this.world.roads, this.landmarks.list);
 
     // --- player car ---
     const mesh = buildCarMesh(COMET_GT);
@@ -216,7 +229,10 @@ export class Game {
 
   /** Keys that work no matter which state we are in. */
   private handleHotkeys(): void {
-    if (this.input.wasPressed('debug')) this.debug.toggle();
+    if (this.input.wasPressed('debug')) {
+      this.debug.toggle();
+      this.roadDebug.visible = this.debug.isVisible;
+    }
     if (this.input.wasPressed('tuning')) this.tuningPanel.toggle();
 
     if (this.state !== 'play') return;
@@ -224,6 +240,10 @@ export class Game {
     if (this.input.wasPressed('camera')) {
       const mode = this.cameraRig.cycle();
       this.hud.showToast(`Camera: ${mode}`);
+    }
+    if (this.input.wasPressed('minimap')) {
+      const rotating = this.minimap.toggleRotation();
+      this.hud.showToast(rotating ? 'Minimap: rotating' : 'Minimap: north up');
     }
     if (this.input.wasPressed('reset')) this.resetCar();
   }
@@ -257,6 +277,8 @@ export class Game {
     this.roadRenderer.update(position.x, position.z, settings.preset.chunkRadius * 256 + 400);
     this.buildings.update(position.x, position.z);
     this.props.update(position.x, position.z);
+    this.landmarks.update(dt);
+    if (this.roadDebug.visible) this.roadDebug.update(position.x, position.z);
     this.water.update(dt);
     this.water.follow(position.x, position.z);
 
@@ -305,6 +327,8 @@ export class Game {
     this.roadRenderer?.dispose();
     this.buildings?.dispose();
     this.props?.dispose();
+    this.landmarks?.dispose();
+    this.roadDebug?.dispose();
     this.minimap?.dispose();
   }
 }

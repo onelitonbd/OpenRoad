@@ -17,7 +17,9 @@ export type PropKind =
   | 'lamp'
   | 'sign'
   | 'haystack'
-  | 'fence';
+  | 'fence'
+  | 'guardrail'
+  | 'windmill';
 
 interface PropInstance {
   x: number;
@@ -141,6 +143,50 @@ export class PropManager {
       }
     }
 
+    // Guardrails along the fast and the dangerous roads.
+    for (const edge of this.network.edges) {
+      if (edge.type !== 'highway' && edge.type !== 'switchback') continue;
+      const count = edge.points.length / 2;
+      for (let i = 0; i < count - 1; i++) {
+        const x0 = edge.points[i * 2];
+        const z0 = edge.points[i * 2 + 1];
+        const x1 = edge.points[i * 2 + 2];
+        const z1 = edge.points[i * 2 + 3];
+        const dx = x1 - x0;
+        const dz = z1 - z0;
+        const len = Math.hypot(dx, dz);
+        if (len < 0.001) continue;
+        const nx = dz / len;
+        const nz = -dx / len;
+        const offset = edge.width / 2 + 1.2;
+        for (const side of [-1, 1]) {
+          this.add({
+            x: (x0 + x1) / 2 + nx * side * offset,
+            y: (edge.heights[i] + edge.heights[i + 1]) / 2,
+            z: (z0 + z1) / 2 + nz * side * offset,
+            rotation: Math.atan2(dx, dz),
+            scale: len / 4,
+          }, 'guardrail');
+        }
+      }
+    }
+
+    // Small windmills in the countryside.
+    for (let i = 0; i < 14; i++) {
+      const x = rng.range(-3000, 3000);
+      const z = rng.range(-3000, 2500);
+      if (this.terrain.regionAt(x, z) !== 'countryside') continue;
+      const road = this.network.nearestRoad(x, z, 60);
+      if (road && road.distance < road.edge.width / 2 + 12) continue;
+      this.add({
+        x,
+        y: this.terrain.height(x, z),
+        z,
+        rotation: rng.range(0, Math.PI * 2),
+        scale: rng.range(0.8, 1.2),
+      }, 'windmill');
+    }
+
     // Signs and haystacks near the rural roads.
     for (const edge of this.network.edges) {
       if (edge.type !== 'rural' && edge.type !== 'coastal') continue;
@@ -192,6 +238,7 @@ export class PropManager {
     const stone = new THREE.MeshLambertMaterial({ color: 0x8b8b88 });
     const metal = new THREE.MeshLambertMaterial({ color: 0x555c66 });
     const hay = new THREE.MeshLambertMaterial({ color: 0xd8b968 });
+    const wood = new THREE.MeshLambertMaterial({ color: 0x7a5636 });
 
     // Broadleaf tree: a trunk plus a foliage ball.
     const treeGeo = mergeSimple([
@@ -239,6 +286,16 @@ export class PropManager {
     // Fence post.
     const fenceGeo = new THREE.BoxGeometry(0.16, 1.4, 0.16);
 
+    // Guardrail: a long thin rail, scaled along its length.
+    const railGeo = new THREE.BoxGeometry(0.14, 0.8, 4);
+
+    // Small windmill for the countryside.
+    const windmillGeo = mergeSimple([
+      { geo: new THREE.CylinderGeometry(1.1, 1.7, 7, 8), y: 3.5, material: 0 },
+      { geo: new THREE.BoxGeometry(0.25, 4.2, 0.2), y: 8.4, material: 1 },
+      { geo: new THREE.BoxGeometry(4.2, 0.25, 0.2), y: 8.4, material: 1 },
+    ]);
+
     // The merged geometries use material groups, so they need an array of
     // materials (the first one is the trunk, the second the foliage).
     const defs: [PropKind, THREE.BufferGeometry, THREE.Material[], number][] = [
@@ -251,6 +308,8 @@ export class PropManager {
       ['sign', signGeo, [metal, green], 200],
       ['haystack', hayGeo, [hay], 200],
       ['fence', fenceGeo, [brown], 300],
+      ['guardrail', railGeo, [metal], 600],
+      ['windmill', windmillGeo, [stone, wood], 60],
     ];
 
     for (const [kind, geometry, materials, capacity] of defs) {
@@ -300,6 +359,8 @@ export class PropManager {
           this.position.set(instance.x, instance.y, instance.z);
           this.quaternion.setFromAxisAngle(this.axis, instance.rotation);
           this.scale.setScalar(instance.scale);
+          // The guardrail is stretched along the road.
+          this.scale.z = instance.scale;
           this.matrix.compose(this.position, this.quaternion, this.scale);
           mesh.setMatrixAt(index, this.matrix);
           counts.set(kind, index + 1);
@@ -310,6 +371,10 @@ export class PropManager {
     for (const [kind, mesh] of this.meshes) {
       mesh.count = counts.get(kind) ?? 0;
       mesh.instanceMatrix.needsUpdate = true;
+      // The bounding sphere of an instanced mesh is cached. Without this the
+      // mesh keeps the (empty) sphere of the first frame and is culled away
+      // for the rest of the game.
+      mesh.computeBoundingSphere();
     }
   }
 

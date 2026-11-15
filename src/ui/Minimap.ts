@@ -1,5 +1,13 @@
 import type { RoadNetwork } from '../world/RoadNetwork';
 
+/** A place worth finding on the map. */
+export interface MapMarker {
+  name: string;
+  x: number;
+  z: number;
+  kind: string;
+}
+
 /**
  * The minimap in the corner of the screen.
  *
@@ -19,7 +27,14 @@ export class Minimap {
   private readonly worldSize = 8000;
   private readonly mapSize = 512;
 
-  constructor(parent: HTMLElement, private readonly network: RoadNetwork) {
+  /** North-up (false) or the map turns with the car (true). */
+  private rotating = true;
+
+  constructor(
+    parent: HTMLElement,
+    private readonly network: RoadNetwork,
+    private readonly markers: readonly MapMarker[] = [],
+  ) {
     this.root = document.createElement('div');
     this.root.className = 'hud-minimap';
 
@@ -99,6 +114,18 @@ export class Minimap {
       ctx.stroke();
     }
 
+    // The landmarks.
+    for (const marker of this.markers) {
+      const [px, py] = toMap(marker.x, marker.z);
+      ctx.fillStyle = '#ff9f43';
+      ctx.beginPath();
+      ctx.arc(px, py, 3.5, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.strokeStyle = 'rgba(0,0,0,0.6)';
+      ctx.lineWidth = 1;
+      ctx.stroke();
+    }
+
     // The starting point of the game.
     const start = this.network.nodes[0];
     if (start) {
@@ -108,6 +135,12 @@ export class Minimap {
       ctx.arc(px, py, 4, 0, Math.PI * 2);
       ctx.fill();
     }
+  }
+
+  /** Switch between a north-up map and a map that turns with the car. */
+  toggleRotation(): boolean {
+    this.rotating = !this.rotating;
+    return this.rotating;
   }
 
   /** Move the minimap to the player. */
@@ -129,9 +162,10 @@ export class Minimap {
     ctx.fillStyle = '#10151b';
     ctx.fillRect(0, 0, size, size);
 
-    // Rotate the map so the player always drives "up".
+    // Rotate the map so the player always drives "up" (unless the map is
+    // locked to the north).
     ctx.translate(size / 2, size / 2);
-    ctx.rotate(-heading);
+    if (this.rotating) ctx.rotate(-heading);
     ctx.scale(scale, scale);
     ctx.translate(-playerX, -playerZ);
 

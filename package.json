@@ -13,7 +13,9 @@
     "test:rapier": "rolldown tools/rapier-demo-test.ts --format esm --platform node --file tools/out/rapier-demo.mjs && node tools/out/rapier-demo.mjs",
     "test:terrain": "rolldown tools/terrain-test.ts --format esm --platform node --file tools/out/terrain-test.mjs && node tools/out/terrain-test.mjs",
     "test:world": "rolldown tools/world-test.ts --format esm --platform node --file tools/out/world-test.mjs && node tools/out/world-test.mjs",
-    "test:roads": "rolldown tools/road-test.ts --format esm --platform node --file tools/out/road-test.mjs && node tools/out/road-test.mjs"
+    "test:roads": "rolldown tools/road-test.ts --format esm --platform node --file tools/out/road-test.mjs && node tools/out/road-test.mjs",
+    "test:smoke": "node tools/smoke/smoke.mjs http://127.0.0.1:4173/",
+    "test:tour": "node tools/smoke/tour.mjs http://127.0.0.1:4173/"
   },
   "dependencies": {
     "@dimforge/rapier3d-compat": "^0.21.0",
@@ -21,9 +23,7 @@
     "three": "^0.187.0"
   },
   "devDependencies": {
-    "@sparticuz/chromium": "^153.0.0",
     "@types/three": "^0.187.0",
-    "playwright-core": "^1.65.1",
     "typescript": "^5.9.3",
     "vite": "^8.3.8"
   }

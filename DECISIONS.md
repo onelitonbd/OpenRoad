@@ -115,3 +115,84 @@ which would make the car float above or sink into the road. Building a
 trimesh from the same vertex buffer guarantees that the visual surface and
 the collision surface are identical. `TriMeshFlags.FIX_INTERNAL_EDGES` stops
 the car from catching on the internal triangle edges.
+
+### The chunk worker gets the road network too
+The terrain under a road is flattened, so the worker needs the road
+geometry to build the same heights as the main thread. The network is sent
+once (as plain arrays of points, heights and widths) when the worker starts.
+`RoadFlattener` exists only for this: it is a stripped down copy of the road
+network without the graph, so the worker does not need the whole class.
+
+### The land is lifted five metres above the sea
+The city was exactly at sea level, so the water plane was drawn on top of
+the streets. The whole continent now starts at `+5 m` and the coast slope
+takes it back down below the water.
+
+### The chunk heights are sampled with a ring of extra vertices
+The colour of a vertex depends on the slope, and the slope needs the height
+of the neighbouring chunk. Without the extra ring the border vertices got a
+one sided slope, which showed up as a visible seam between the chunks.
+The ring costs about 25 % more noise samples and removes the seam.
+
+---
+
+## Phase 3 - Roads
+
+### The road network is a graph of edges, not a list of splines
+Every edge has two nodes, a list of centre line points and the matching
+heights. The nodes are what makes the traffic lights, the AI paths and the
+junctions possible later on.
+
+### The road heights are the raw terrain heights
+An earlier version smoothed the height profile. That made two crossing roads
+sit at different heights, which produced a visible step in the middle of the
+junction. Without the smoothing the roads use the terrain height directly,
+so crossing roads always meet at the same height.
+
+### The network is connected after it is generated
+The regions are built separately, so the highways started as islands that
+nothing could reach. `connectComponents()` links the parts with the
+shortest connection, so the whole network is one graph (287 of 287 nodes are
+reachable).
+
+### The roads are drawn as ribbons, not as road meshes per chunk
+One mesh per road edge is simpler than splitting the roads at the chunk
+border and it cannot produce gaps. The roads are built in world space and
+offset `+6 cm` above the terrain, which is enough to avoid z-fighting.
+
+### The ribbon winding has to face up
+The first version of the ribbon was wound the other way round, so Three.js
+culled the whole road and the streets were invisible. The junction patches
+had the same problem.
+
+---
+
+## Phase 4 - Buildings, props and the minimap
+
+### Buildings stand clear of the road
+The setback is calculated from the size of the building: the edge of the
+building is `pavement` metres behind the kerb. The first version placed the
+*centre* of the tower next to the road, so the tower stood on the street and
+the player spawned inside it.
+
+### Instanced meshes need their bounding sphere recomputed
+Three.js caches the bounding sphere of an `InstancedMesh`. The mesh was
+built while the player was in the city, where there are no props, so the
+sphere stayed empty and the props were culled for the whole game.
+`computeBoundingSphere()` is called after every update now.
+
+### The colours are converted from sRGB to linear
+The terrain colours and the canvas textures are picked like in a colour
+picker (sRGB), but the renderer works with linear values. Without the
+conversion everything looked washed out.
+
+### The head-less browser test is part of the workflow
+`tools/smoke/` loads the real game in a head-less browser, drives it and
+takes a screenshot. It found the camera bug, the invisible roads, the
+buildings on top of the road and the car falling through the world - none
+of those show up in a unit test.
+
+### The camera rig drives the camera of the renderer
+There used to be two cameras: one in the renderer and one in the camera rig.
+Only the renderer one was used for the picture, so the car was never in
+view. The rig now configures the camera of the renderer.
