@@ -3,21 +3,69 @@
   "ok": true,
   "errors": [],
   "stats": {
-    "fps": 6,
-    "drawCalls": 162,
-    "triangles": 45768,
-    "geometries": 164,
-    "textures": 5,
-    "chunksLoaded": 34,
-    "chunkQueue": 3,
+    "fps": 4,
+    "drawCalls": 168,
+    "triangles": 59070,
+    "geometries": 171,
+    "textures": 6,
+    "chunksLoaded": 44,
+    "chunkQueue": 0,
     "position": [
-      390.6725158691406,
-      5.850035667419434,
-      235.03494262695312
+      386.5049743652344,
+      5.850094318389893,
+      1.5930171012878418
     ],
-    "speedKmh": 12
+    "speedKmh": 8
   },
   "traffic": [
+    {
+      "t": 19,
+      "cars": 15,
+      "physics": 3,
+      "moving": 15,
+      "below": 0,
+      "speeds": [
+        28,
+        33,
+        28,
+        33,
+        50,
+        33,
+        33,
+        15,
+        50,
+        33,
+        37,
+        33,
+        29,
+        24,
+        31
+      ]
+    },
+    {
+      "t": 21,
+      "cars": 15,
+      "physics": 3,
+      "moving": 15,
+      "below": 0,
+      "speeds": [
+        28,
+        35,
+        28,
+        35,
+        52,
+        35,
+        35,
+        17,
+        52,
+        35,
+        40,
+        35,
+        28,
+        27,
+        33
+      ]
+    },
     {
       "t": 23,
       "cars": 15,
@@ -25,21 +73,21 @@
       "moving": 15,
       "below": 0,
       "speeds": [
-        58,
-        50,
-        58,
-        58,
-        58,
         28,
-        49,
-        58,
-        58,
-        33,
-        58,
-        33,
-        22,
-        54,
-        15
+        35,
+        28,
+        35,
+        53,
+        35,
+        35,
+        21,
+        53,
+        35,
+        43,
+        35,
+        26,
+        28,
+        34
       ]
     },
     {
@@ -49,21 +97,21 @@
       "moving": 15,
       "below": 0,
       "speeds": [
-        60,
-        52,
-        60,
-        60,
-        56,
         28,
-        50,
-        60,
-        60,
-        34,
-        60,
-        34,
-        26,
-        57,
-        14
+        36,
+        28,
+        36,
+        54,
+        36,
+        36,
+        23,
+        54,
+        36,
+        45,
+        36,
+        24,
+        28,
+        35
       ]
     },
     {
@@ -73,78 +121,52 @@
       "moving": 15,
       "below": 0,
       "speeds": [
-        62,
-        53,
-        62,
-        62,
-        49,
         28,
-        44,
-        62,
-        62,
-        35,
-        62,
-        35,
-        30,
-        59,
-        14
-      ]
-    },
-    {
-      "t": 29,
-      "cars": 15,
-      "physics": 3,
-      "moving": 15,
-      "below": 0,
-      "speeds": [
-        62,
-        53,
-        62,
-        62,
-        47,
+        36,
         28,
-        40,
-        62,
-        62,
-        35,
-        62,
-        35,
-        31,
-        60,
-        13
-      ]
-    },
-    {
-      "t": 31,
-      "cars": 15,
-      "physics": 3,
-      "moving": 15,
-      "below": 0,
-      "speeds": [
-        63,
+        36,
         54,
-        63,
-        63,
-        44,
-        28,
+        36,
+        36,
         25,
-        63,
-        63,
+        54,
         36,
-        63,
+        46,
         36,
-        34,
-        61,
-        12
+        22,
+        28,
+        36
       ]
     }
   ],
-  "debugOverlay": "FPS 6  (8295.5 ms)\ndraw calls 162\ntriangles 45,768\ngeometries 164  textures 5\nheap 37.7 MB\nchunks 35 loaded / 2 queued\nai 15 active / 3 physics\ntraffic lights 103\npos 391, 235",
+  "debugOverlay": "FPS 4  (13530.6 ms)\ndraw calls 168\ntriangles 59,070\ngeometries 171  textures 6\nheap 35.3 MB\nchunks 44 loaded / 0 queued\nai 15 active / 5 physics\ntraffic lights 96\npos 387, 1",
   "mobile": {
     "controlsVisible": true,
-    "buttons": 11,
+    "buttons": 12,
     "hasFullscreen": true,
     "rotateVisibleInPortrait": true,
     "rotateVisibleInLandscape": false
+  },
+  "map": {
+    "before": {
+      "edges": 217,
+      "nodes": 148,
+      "signature": "4133c92c",
+      "outside": 0
+    },
+    "after": {
+      "edges": 217,
+      "nodes": 148,
+      "signature": "4133c92c",
+      "outside": 0
+    },
+    "stable": true,
+    "insideBounds": true
+  },
+  "gearbox": {
+    "brakeGear": 1,
+    "brakeSpeed": 0.002253506573097238,
+    "reverseGear": -1,
+    "reverseSpeed": -1.8975540004705862
   }
 }
