@@ -1,133 +1,145 @@
 {
   "url": "https://openroad-six-ivory.vercel.app/",
-  "ok": false,
-  "errors": [
-    "fatal: page.evaluate: TypeError: renderer.hasMesh is not a function\n    at eval (eval at evaluate (:370:30), <anonymous>:8:53)\n    at Array.filter (<anonymous>)\n    at eval (eval at evaluate (:370:30), <anonymous>:8:26)\n    at UtilityScript.evaluate (<anonymous>:372:16)\n    at UtilityScript.<anonymous> (<anonymous>:1:44)"
-  ],
-  "stats": null,
+  "ok": true,
+  "errors": [],
+  "stats": {
+    "fps": 4,
+    "drawCalls": 202,
+    "triangles": 60002,
+    "geometries": 193,
+    "textures": 6,
+    "chunksLoaded": 44,
+    "chunkQueue": 0,
+    "position": [
+      386.5887145996094,
+      5.850108623504639,
+      -0.31294509768486023
+    ],
+    "speedKmh": 7
+  },
   "traffic": [
     {
-      "t": 19,
+      "t": 20,
       "cars": 15,
       "physics": 3,
-      "moving": 15,
+      "moving": 13,
       "below": 0,
       "speeds": [
+        32,
+        48,
+        32,
+        32,
+        48,
+        32,
+        0,
+        27,
+        48,
+        32,
+        34,
+        32,
         28,
-        33,
-        28,
-        33,
-        49,
-        33,
-        33,
-        14,
-        49,
-        33,
-        36,
-        33,
-        28,
-        22,
-        30
+        19,
+        0
       ]
     },
     {
-      "t": 21,
+      "t": 22,
       "cars": 15,
       "physics": 3,
-      "moving": 15,
+      "moving": 13,
       "below": 0,
       "speeds": [
-        28,
-        34,
-        28,
+        32,
+        48,
+        32,
+        32,
+        48,
+        32,
+        0,
+        27,
+        48,
+        32,
+        35,
+        32,
+        29,
+        20,
+        0
+      ]
+    },
+    {
+      "t": 24,
+      "cars": 15,
+      "physics": 3,
+      "moving": 13,
+      "below": 0,
+      "speeds": [
         34,
         51,
         34,
         34,
-        17,
+        51,
+        34,
+        0,
+        28,
+        51,
+        34,
+        38,
+        34,
+        32,
+        21,
+        0
+      ]
+    },
+    {
+      "t": 26,
+      "cars": 15,
+      "physics": 3,
+      "moving": 13,
+      "below": 0,
+      "speeds": [
+        34,
+        51,
+        34,
+        34,
+        51,
+        34,
+        0,
+        28,
         51,
         34,
         39,
         34,
-        28,
-        27,
-        33
+        33,
+        21,
+        0
       ]
     },
     {
-      "t": 23,
+      "t": 28,
       "cars": 15,
       "physics": 3,
-      "moving": 15,
+      "moving": 13,
       "below": 0,
       "speeds": [
+        35,
+        52,
+        35,
+        35,
+        52,
+        35,
+        0,
         28,
-        35,
-        28,
-        35,
-        53,
-        35,
-        35,
-        19,
-        53,
+        52,
         35,
         41,
         35,
-        27,
-        28,
-        34
-      ]
-    },
-    {
-      "t": 25,
-      "cars": 15,
-      "physics": 3,
-      "moving": 15,
-      "below": 0,
-      "speeds": [
-        28,
-        36,
-        28,
-        36,
-        53,
-        36,
-        36,
-        22,
-        53,
-        36,
-        43,
-        36,
-        25,
-        28,
-        35
-      ]
-    },
-    {
-      "t": 27,
-      "cars": 15,
-      "physics": 3,
-      "moving": 15,
-      "below": 0,
-      "speeds": [
-        28,
-        36,
-        28,
-        36,
-        54,
-        36,
-        36,
-        25,
-        54,
-        36,
-        46,
-        36,
-        22,
-        28,
-        36
+        33,
+        21,
+        0
       ]
     }
   ],
-  "debugOverlay": null,
+  "debugOverlay": "FPS 4  (10499.7 ms)\ndraw calls 202\ntriangles 60,002\ngeometries 193  textures 6\nheap 36.2 MB\nchunks 44 loaded / 0 queued\nai 15 active / 4 physics\ntraffic lights 96\npos 387, -0",
   "mobile": {
     "controlsVisible": true,
     "buttons": 12,
@@ -153,9 +165,13 @@
   },
   "gearbox": {
     "brakeGear": 1,
-    "brakeSpeed": 0.030367444834249527,
+    "brakeSpeed": -0.0033599859322953826,
     "reverseGear": -1,
-    "reverseSpeed": -2.0959897682578847
+    "reverseSpeed": -1.5880819526216445
   },
-  "roadMeshes": null
+  "roadMeshes": {
+    "near": 12,
+    "missing": 0,
+    "meshes": 150
+  }
 }
