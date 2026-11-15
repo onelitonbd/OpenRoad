@@ -1,0 +1,143 @@
+{
+  "url": "https://openroad-six-ivory.vercel.app/",
+  "ok": true,
+  "errors": [],
+  "stats": {
+    "fps": 4,
+    "drawCalls": 162,
+    "triangles": 45768,
+    "geometries": 164,
+    "textures": 5,
+    "chunksLoaded": 34,
+    "chunkQueue": 3,
+    "position": [
+      390.7049865722656,
+      5.850037574768066,
+      235.83059692382812
+    ],
+    "speedKmh": 12
+  },
+  "traffic": [
+    {
+      "t": 23,
+      "cars": 15,
+      "physics": 3,
+      "moving": 15,
+      "below": 0,
+      "speeds": [
+        57,
+        49,
+        57,
+        57,
+        57,
+        27,
+        49,
+        57,
+        57,
+        33,
+        57,
+        33,
+        19,
+        51,
+        15
+      ]
+    },
+    {
+      "t": 25,
+      "cars": 15,
+      "physics": 3,
+      "moving": 15,
+      "below": 0,
+      "speeds": [
+        59,
+        51,
+        59,
+        59,
+        59,
+        28,
+        50,
+        59,
+        59,
+        34,
+        59,
+        34,
+        24,
+        55,
+        15
+      ]
+    },
+    {
+      "t": 27,
+      "cars": 15,
+      "physics": 3,
+      "moving": 15,
+      "below": 0,
+      "speeds": [
+        61,
+        52,
+        61,
+        61,
+        54,
+        28,
+        50,
+        61,
+        61,
+        35,
+        61,
+        35,
+        28,
+        58,
+        14
+      ]
+    },
+    {
+      "t": 29,
+      "cars": 15,
+      "physics": 3,
+      "moving": 15,
+      "below": 0,
+      "speeds": [
+        62,
+        53,
+        62,
+        62,
+        47,
+        28,
+        38,
+        62,
+        62,
+        35,
+        62,
+        35,
+        32,
+        60,
+        13
+      ]
+    },
+    {
+      "t": 31,
+      "cars": 15,
+      "physics": 3,
+      "moving": 15,
+      "below": 0,
+      "speeds": [
+        63,
+        54,
+        63,
+        63,
+        44,
+        28,
+        22,
+        63,
+        63,
+        36,
+        63,
+        36,
+        34,
+        61,
+        12
+      ]
+    }
+  ],
+  "debugOverlay": "FPS 4  (8537.1 ms)\ndraw calls 162\ntriangles 45,768\ngeometries 164  textures 5\nheap 46.4 MB\nchunks 35 loaded / 2 queued\nai 15 active / 3 physics\ntraffic lights 103\npos 391, 236"
+}
