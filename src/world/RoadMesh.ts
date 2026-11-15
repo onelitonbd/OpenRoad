@@ -231,6 +231,16 @@ export class RoadRenderer {
     this.group.name = 'roads';
   }
 
+  /** True when the mesh of a road is built at the moment. */
+  hasMesh(edgeId: number): boolean {
+    return this.meshes.has(edgeId);
+  }
+
+  /** How many road meshes are built at the moment. */
+  get meshCount(): number {
+    return this.meshes.size;
+  }
+
   /** Load and unload the roads around the player. */
   update(playerX: number, playerZ: number, radius: number): void {
     if (Math.abs(playerX - this.lastX) < 40 && Math.abs(playerZ - this.lastZ) < 40) return;

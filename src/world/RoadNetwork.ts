@@ -744,20 +744,13 @@ export class RoadNetwork {
   roadsInRadius(x: number, z: number, radius: number): RoadEdge[] {
     const result: RoadEdge[] = [];
     if (!this.flattener) return result;
-    const seen = new Set<number>();
-    const steps = Math.max(1, Math.ceil(radius / 120));
 
-    // Sample a grid of points around the query and collect the roads that are
-    // close to them. Roads are long, so a handful of samples is enough.
-    for (let dz = -steps; dz <= steps; dz++) {
-      for (let dx = -steps; dx <= steps; dx++) {
-        const hit = this.flattener.nearest(x + dx * 120, z + dz * 120, radius);
-        if (!hit) continue;
-        if (seen.has(hit.roadIndex)) continue;
-        seen.add(hit.roadIndex);
-        const edge = this.edges[hit.roadIndex];
-        if (edge) result.push(edge);
-      }
+    // Every road that comes within the radius - not only the closest one
+    // at a few sample points. A road that is missing from this list would
+    // be built later, while the player is looking at it.
+    for (const index of this.flattener.roadsNear(x, z, radius)) {
+      const edge = this.edges[index];
+      if (edge) result.push(edge);
     }
     return result;
   }

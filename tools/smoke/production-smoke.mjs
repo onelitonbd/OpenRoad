@@ -125,6 +125,7 @@ const report = {
   mobile: null,
   map: null,
   gearbox: null,
+  roadMeshes: null,
 };
 
 try {
@@ -197,6 +198,20 @@ try {
     reverseGear: reversing.gear,
     reverseSpeed: reversing.speed,
   };
+
+  // Every road near the car has to have its mesh already - otherwise a
+  // road appears right in front of the car while it is driving.
+  const roadMeshes = await page.evaluate(() => {
+    const game = window.openRoad;
+    const renderer = game?.roadRenderer;
+    const roads = game?.world?.roads;
+    const position = game?.vehicle?.body?.translation?.();
+    if (!renderer || !roads || !position) return { near: 0, missing: 0, meshes: 0 };
+    const near = roads.roadsInRadius(position.x, position.z, 150);
+    const missing = near.filter((edge) => !renderer.hasMesh(edge.id)).length;
+    return { near: near.length, missing, meshes: renderer.meshCount };
+  });
+  report.roadMeshes = roadMeshes;
 
   // Open the debug overlay for the AI numbers.
   await page.keyboard.press('F3');
@@ -301,6 +316,8 @@ report.ok =
   !!report.gearbox &&
   report.gearbox.brakeGear > 0 &&
   report.gearbox.reverseGear < 0 &&
+  !!report.roadMeshes &&
+  report.roadMeshes.missing === 0 &&
   !!mobile &&
   mobile.controlsVisible &&
   mobile.hasFullscreen &&
@@ -329,6 +346,7 @@ if (process.env.GITHUB_STEP_SUMMARY) {
     `- Traffic: ${last ? `${last.cars} cars, ${last.physics} with physics, ${last.moving} moving` : 'n/a'}`,
     `- Map: ${report.map ? `${report.map.after.edges} roads, unchanged while driving: ${report.map.stable ? 'yes' : 'no'}, all inside the border: ${report.map.insideBounds ? 'yes' : 'no'}` : 'n/a'}`,
     `- Gearbox: brake gear ${report.gearbox?.brakeGear ?? 'n/a'}, reverse gear ${report.gearbox?.reverseGear ?? 'n/a'} at ${(report.gearbox?.reverseSpeed ?? 0).toFixed(1)} m/s`,
+    `- Road meshes: ${report.roadMeshes?.meshes ?? 'n/a'} built, ${report.roadMeshes?.missing ?? 'n/a'} of ${report.roadMeshes?.near ?? 'n/a'} roads near the car are missing`,
     `- Phone: ${mobile ? `${mobile.buttons} touch buttons, full screen ${mobile.hasFullscreen ? 'yes' : 'no'}, "turn your phone" in portrait: ${mobile.rotateVisibleInPortrait ? 'yes' : 'no'}` : 'n/a'}`,
     '',
     '```',

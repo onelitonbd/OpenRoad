@@ -70,6 +70,19 @@ export const QUALITY_PRESETS: Record<QualityPreset, QualitySettings> = {
   },
 };
 
+/**
+ * How far the road meshes have to reach.
+ *
+ * The roads have to be built *before* they come out of the fog, otherwise
+ * a road appears right in front of the car while it is driving. The
+ * distance is therefore always larger than the fog - and a bit more than
+ * the terrain chunks, so the road is there before the ground under it.
+ */
+export function roadStreamRadius(preset: QualitySettings): number {
+  const chunkRadius = preset.chunkRadius * 256 + 400;
+  return Math.max(chunkRadius, Math.round(preset.fogDistance * 1.35));
+}
+
 export interface GameSettings {
   quality: QualityPreset;
   masterVolume: number;

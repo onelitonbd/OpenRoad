@@ -17,7 +17,7 @@ import { CameraRig } from '../vehicles/CameraRig';
 import { buildCarMesh } from '../vehicles/CarFactory';
 import { COMET_GT } from '../vehicles/cars';
 import { bus } from './EventBus';
-import { settings } from './Settings';
+import { roadStreamRadius, settings } from './Settings';
 import { TrafficManager } from '../ai/TrafficManager';
 import { ChunkManager } from '../world/ChunkManager';
 import { RoadRenderer } from '../world/RoadMesh';
@@ -429,7 +429,9 @@ export class Game {
 
     // Stream the terrain, the roads, the buildings and the props.
     this.world.update(position.x, position.z);
-    this.roadRenderer.update(position.x, position.z, settings.preset.chunkRadius * 256 + 400);
+    // The roads have to be built before they come out of the fog -
+    // otherwise a road appears right in front of the car.
+    this.roadRenderer.update(position.x, position.z, roadStreamRadius(settings.preset));
     this.buildings.update(position.x, position.z);
     this.props.update(position.x, position.z);
     this.landmarks.update(dt);

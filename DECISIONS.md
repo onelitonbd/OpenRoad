@@ -365,6 +365,22 @@ still rolling forward.
 0 km/h, the car does not move at all while the brake is held, and the
 reverse drives backwards at 29 km/h.
 
+### The roads near the car are collected properly
+The road meshes are built from a list of the roads around the player. That
+list was built by sampling a grid of points and taking the **closest** road
+to every sample point. In the city grid a street is often shadowed by its
+neighbours at every sample point, so the street fell out of the list while
+the car was driving - and appeared again a moment later, right in front of
+the player.
+
+`RoadFlattener.roadsNear()` now collects **every** road that comes within
+the radius, so the list only changes when the player really drives away
+from a road. `tools/road-test.ts` and the production smoke test check
+that.
+
+The roads are also built a bit further out than the fog
+(`roadStreamRadius()`), so they are there before they come out of the fog.
+
 ### The map is built in one piece
 The road network used to be built in pieces and joined afterwards: the
 country roads started in the middle of a highway, the coastal road and the

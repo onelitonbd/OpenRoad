@@ -201,6 +201,24 @@ function main(): void {
     }
   }
 
+  // --- the roads near the car must not change while the car moves ---
+  // If a road drops out of the list and comes back later, it appears in
+  // front of the player while they are driving.
+  let unstable = 0;
+  for (let i = 0; i < 120; i++) {
+    const x = (i * 97) % 2600 - 1300;
+    const z = (i * 53) % 2600 - 1300;
+    const near = new Set(roads.roadsInRadius(x, z, 150).map((edge) => edge.id));
+    const wide = new Set(roads.roadsInRadius(x, z, 2025).map((edge) => edge.id));
+    for (const id of near) {
+      if (!wide.has(id)) unstable += 1;
+    }
+  }
+  console.log(`  roads near the car: ${unstable} roads change while the car drives`);
+  if (unstable > 0) {
+    problems.push(`${unstable} roads appear while the player drives`);
+  }
+
   // --- the result ---
   const problems: string[] = [];
   if (outside > 0) problems.push(`${outside} road points lie outside the map`);

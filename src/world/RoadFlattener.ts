@@ -95,6 +95,42 @@ export class RoadFlattener {
     }
   }
 
+  /**
+   * The index of every road that comes within `maxDistance` of a position.
+   *
+   * `nearest()` only returns the closest road, and a grid of sample points
+   * is not enough: in the city grid a street is often shadowed by its
+   * neighbours at every sample point, so the street would be missing from
+   * the list and would appear in front of the player later.
+   */
+  roadsNear(x: number, z: number, maxDistance: number): number[] {
+    const cx = Math.floor(x / CELL_SIZE);
+    const cz = Math.floor(z / CELL_SIZE);
+    const cells = Math.max(1, Math.ceil(maxDistance / CELL_SIZE));
+    const found = new Set<number>();
+
+    for (let dz = -cells; dz <= cells; dz++) {
+      for (let dx = -cells; dx <= cells; dx++) {
+        const list = this.grid.get(`${cx + dx},${cz + dz}`);
+        if (!list) continue;
+        for (const index of list) {
+          const s = this.segments[index];
+          // The distance from the point to the segment.
+          const ex = s.x1 - s.x0;
+          const ez = s.z1 - s.z0;
+          const lenSq = ex * ex + ez * ez;
+          const t = lenSq > 1e-9 ? clamp01(((x - s.x0) * ex + (z - s.z0) * ez) / lenSq) : 0;
+          const px = s.x0 + ex * t;
+          const pz = s.z0 + ez * t;
+          if (Math.hypot(x - px, z - pz) <= maxDistance) {
+            found.add(s.roadIndex);
+          }
+        }
+      }
+    }
+    return [...found];
+  }
+
   /** The closest road to a position. */
   nearest(x: number, z: number, maxDistance = 80): FlatRoadHit | null {
     const cx = Math.floor(x / CELL_SIZE);
