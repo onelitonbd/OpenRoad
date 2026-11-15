@@ -1,0 +1,76 @@
+name: Production smoke
+
+# The smoke test runs against the deployed build on the Vercel production URL.
+# The development sandbox can only reach GitHub, npm and PyPI, so the browser
+# check has to run on a runner with a full internet connection.
+on:
+  push:
+    branches:
+      - arena/5e01b9ed-openroad
+    paths:
+      - .github/workflows/production-smoke.yml
+  workflow_dispatch:
+    inputs:
+      url:
+        description: URL of the deployed build
+        required: false
+        default: https://openroad-six-ivory.vercel.app/
+
+permissions:
+  contents: write
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Check out the branch
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install the dependencies
+        run: |
+          npm ci
+          npm i --no-save playwright
+          npx playwright install --with-deps chromium
+
+      - name: Find the Chromium binary
+        id: chromium
+        run: echo "path=$(node -e "console.log(require('playwright').chromium.executablePath())")" >> "$GITHUB_OUTPUT"
+
+      - name: Smoke test the deployed build
+        env:
+          CHROMIUM_PATH: ${{ steps.chromium.outputs.path }}
+        run: |
+          node tools/smoke/production-smoke.mjs \
+            "${{ inputs.url || 'https://openroad-six-ivory.vercel.app/' }}" \
+            tools/smoke/production-report.json \
+            tools/smoke/shots/production-phase5.png
+
+      - name: Store the report and the screenshot
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: production-smoke
+          path: |
+            tools/smoke/production-report.json
+            tools/smoke/shots/production-phase5.png
+
+      - name: Keep the report in the branch
+        if: always()
+        run: |
+          if [ -f tools/smoke/production-report.json ]; then
+            git config user.name "openroad-ci"
+            git config user.email "ci@openroad.dev"
+            git add tools/smoke/production-report.json tools/smoke/shots/production-phase5.png
+            if git diff --cached --quiet; then
+              echo "nothing to commit"
+            else
+              git commit -m "Add the production smoke report"
+              git push
+            fi
+          fi
