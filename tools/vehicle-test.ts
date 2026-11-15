@@ -72,7 +72,35 @@ async function main(): Promise<void> {
   }
   report(vehicle, 'after drift');
 
+  // The brake has to stop the car - and it must never push it backwards.
   console.log('--- brake to a stop ---');
+  const beforeBrake = vehicle.body.translation();
+  for (let i = 0; i < 240; i++) {
+    vehicle.setControls(0, 1, 0, false);
+    vehicle.prepareStep(dt);
+    vehicle.applyPhysics(dt);
+    physics.step();
+    vehicle.update(dt);
+    if (i % 60 === 59) report(vehicle, `brake t=${((i + 1) * dt).toFixed(1)}s`);
+  }
+  report(vehicle, 'after braking');
+
+  const stopped = Math.abs(vehicle.forwardSpeed) * 3.6;
+  const gear = vehicle.currentGear;
+  console.log(`the brake stopped the car at ${stopped.toFixed(1)} km/h, gear ${gear}`);
+  if (stopped > 2) {
+    console.log(`FAILED: the brake did not stop the car (${stopped.toFixed(1)} km/h)`);
+    process.exitCode = 1;
+    return;
+  }
+  if (gear < 0) {
+    console.log('FAILED: the brake engaged the reverse gear');
+    process.exitCode = 1;
+    return;
+  }
+
+  // The brake alone must not drive the car backwards.
+  const brakeStart = vehicle.body.translation();
   for (let i = 0; i < 180; i++) {
     vehicle.setControls(0, 1, 0, false);
     vehicle.prepareStep(dt);
@@ -80,14 +108,21 @@ async function main(): Promise<void> {
     physics.step();
     vehicle.update(dt);
   }
-  report(vehicle, 'after braking');
+  const brakeEnd = vehicle.body.translation();
+  const brakeDrift = Math.hypot(brakeEnd.x - brakeStart.x, brakeEnd.z - brakeStart.z);
+  console.log(`the car moved ${brakeDrift.toFixed(2)} m while the brake was held`);
+  if (brakeDrift > 0.5) {
+    console.log(`FAILED: the brake pushed the car backwards (${brakeDrift.toFixed(2)} m)`);
+    process.exitCode = 1;
+    return;
+  }
 
-  // The brake becomes the reverse accelerator: the car has to drive
-  // backwards at a useful speed, not crawl along at 3 km/h.
-  console.log('--- reverse (keep the brake held) ---');
+  // The reverse is a pedal of its own: the car has to drive backwards at a
+  // useful speed, not crawl along at 3 km/h.
+  console.log('--- reverse ---');
   const start = vehicle.body.translation();
   for (let i = 0; i < 180; i++) {
-    vehicle.setControls(0, 1, 0, false);
+    vehicle.setControls(0, 0, 0, false, 1);
     vehicle.prepareStep(dt);
     vehicle.applyPhysics(dt);
     physics.step();
@@ -111,7 +146,30 @@ async function main(): Promise<void> {
     process.exitCode = 1;
     return;
   }
-  console.log('OK: the car drives backwards at a useful speed.');
+
+  // The throttle has to drive forward again - the reverse gear may not
+  // keep the car stuck.
+  console.log('--- throttle drives forward again ---');
+  for (let i = 0; i < 180; i++) {
+    vehicle.setControls(1, 0, 0, false, 0);
+    vehicle.prepareStep(dt);
+    vehicle.applyPhysics(dt);
+    physics.step();
+    vehicle.update(dt);
+  }
+  report(vehicle, 'after forward');
+  if (vehicle.currentGear < 0) {
+    console.log('FAILED: the car stayed in the reverse gear');
+    process.exitCode = 1;
+    return;
+  }
+  if (vehicle.forwardSpeed <= 0) {
+    console.log('FAILED: the car did not drive forward again');
+    process.exitCode = 1;
+    return;
+  }
+
+  console.log('OK: the brake stops the car and the reverse is a pedal of its own.');
 }
 
 function report(vehicle: Vehicle, label: string): void {

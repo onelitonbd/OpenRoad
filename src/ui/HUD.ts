@@ -60,7 +60,7 @@ export class HUD {
     const hint = document.createElement('div');
     hint.className = 'hud-hint';
     hint.innerHTML =
-      'W/S throttle &amp; brake &middot; A/D steer &middot; SPACE handbrake<br />C camera &middot; R reset &middot; L lights &middot; H horn &middot; F3 debug';
+      'W/S throttle &amp; brake &middot; A/D steer &middot; X reverse &middot; SPACE handbrake<br />C camera &middot; R reset &middot; L lights &middot; H horn &middot; F3 debug';
     this.hintEl = hint;
     this.root.appendChild(hint);
 

@@ -52,7 +52,8 @@ test below - on the desktop **and** as a phone.
 | Action | Keyboard | Touch |
 |---|---|---|
 | Throttle | `W` / `Up` | **GAS** pedal |
-| Brake / reverse | `S` / `Down` | **BRAKE** pedal |
+| Brake | `S` / `Down` | **BRAKE** pedal |
+| Reverse | `X` | **REV** pedal |
 | Steer | `A` `D` / `Left` `Right` | **◀ ▶** buttons or drag on the left half |
 | Handbrake (drift) | `Space` | **HAND BRAKE** |
 | Change camera | `C` | **CAM** |
@@ -68,9 +69,10 @@ test below - on the desktop **and** as a phone.
 
 Cameras: chase (default), far chase, hood and cockpit.
 
-The brake stops the car and then becomes the reverse accelerator: hold it
-and the car drives backwards (up to 29 km/h). Press the throttle to drive
-forward again.
+The brake only ever stops the car - it never pushes you backwards. The
+reverse is a pedal of its own: press `X` (or the **REV** button on a
+phone) and the car drives backwards at up to 29 km/h. Press the throttle
+to drive forward again.
 
 ## On a phone
 

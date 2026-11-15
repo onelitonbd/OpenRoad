@@ -349,9 +349,35 @@ per cent, so every corner was a bend in the road. The wobble is now 4 per
 cent and the connectors between the rings are picked by angle, so they
 really point away from the centre instead of being skewed by 15 degrees.
 
-### The reverse gear stays in reverse
-The gearbox changed back to the forward gear as soon as the car was
-rolling backwards faster than 0.8 m/s - which is 3 km/h. That is why the
-car only crawled backwards. The reverse gear now stays until the player
-presses the throttle, the reverse has a speed limit of its own (29 km/h)
-and a released brake slows the car down instead of letting it roll away.
+### The brake stops the car, the reverse is a pedal of its own
+The brake used to turn into the reverse accelerator as soon as the car was
+almost stopped: the car crawled backwards at 3 km/h and the player never
+asked for it.
+
+Now the brake **only** brakes. It never pushes the car backwards, it never
+engages the reverse gear and it holds the car still. The reverse is a
+pedal of its own - `X` on the keyboard, **REV** on the touch screen. It
+has a speed limit of its own (29 km/h), it stays engaged until the
+throttle is pressed and it brakes the car to a stop first when the car is
+still rolling forward.
+
+`tools/vehicle-test.ts` checks all three: the brake stops the car at
+0 km/h, the car does not move at all while the brake is held, and the
+reverse drives backwards at 29 km/h.
+
+### The map is built in one piece
+The road network used to be built in pieces and joined afterwards: the
+country roads started in the middle of a highway, the coastal road and the
+mountain road hung in the air, and the component fixer built long diagonal
+roads across the map to join them. That is how roads used to appear in
+front of the player.
+
+Now the coast and the mountain road are built first, the highways end
+exactly at their junctions, and the coastal road is **split** where the
+highway from downtown joins it. Every road is part of the network from
+the start. `connectComponents()` is only a safety net now - it never has
+to add a road.
+
+The test in `tools/road-test.ts` checks that no road leaves the border of
+the world, that no road hangs in the air, that no road has zero length
+and that two builds give the same map.

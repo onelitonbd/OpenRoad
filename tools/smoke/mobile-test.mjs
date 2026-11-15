@@ -80,8 +80,8 @@ check('the touch mode is on', controls.touchMode);
 check('there is a full screen button', controls.hasFullscreen);
 check(
   'the controls have the buttons we need',
-  ['◀', '▶', 'GAS', 'BRAKE', 'HANDBRAKE', 'CAM', 'HORN', 'RST', 'II', 'FULL'].every((label) =>
-    controls.buttons.includes(label),
+  ['◀', '▶', 'GAS', 'BRAKE', 'REV', 'HANDBRAKE', 'CAM', 'HORN', 'RST', 'II', 'FULL'].every(
+    (label) => controls.buttons.includes(label),
   ),
   controls.buttons.join(' | '),
 );
@@ -122,6 +122,41 @@ const driving = await page.evaluate(() => ({
 await page.mouse.up();
 check('the gas pedal gives throttle', driving.throttle > 0.5, `throttle=${driving.throttle}`);
 check('the car drives with the gas pedal', driving.speed > 5, `${driving.speed.toFixed(1)} km/h`);
+
+// --- the brake stops the car, the reverse drives backwards -------------------
+await page.waitForTimeout(1500);
+const brake = await page.$('.touch-btn.brake');
+const brakeBox = await brake.boundingBox();
+await page.mouse.move(brakeBox.x + brakeBox.width / 2, brakeBox.y + brakeBox.height / 2);
+await page.mouse.down();
+await page.waitForTimeout(2500);
+const braking = await page.evaluate(() => ({
+  speed: window.openRoad.vehicle.speedKmh,
+  gear: window.openRoad.vehicle.currentGear,
+}));
+await page.mouse.up();
+check('the brake pedal stops the car', braking.speed < 2, `${braking.speed.toFixed(1)} km/h`);
+check('the brake does not engage the reverse', braking.gear > 0, `gear ${braking.gear}`);
+
+const reverse = await page.$('.touch-btn.reverse');
+const reverseBox = await reverse.boundingBox();
+await page.mouse.move(reverseBox.x + reverseBox.width / 2, reverseBox.y + reverseBox.height / 2);
+await page.mouse.down();
+// The software renderer in the test browser is slow, so the car needs a
+// moment to build up speed.
+await page.waitForTimeout(6000);
+const reversing = await page.evaluate(() => ({
+  speed: window.openRoad.vehicle.speedKmh,
+  gear: window.openRoad.vehicle.currentGear,
+  forward: window.openRoad.vehicle.forwardSpeed,
+}));
+await page.mouse.up();
+check('the reverse pedal engages the reverse gear', reversing.gear < 0, `gear ${reversing.gear}`);
+check(
+  'the reverse pedal drives the car backwards',
+  reversing.forward < -1.5,
+  `${reversing.forward.toFixed(1)} m/s`,
+);
 
 // --- dragging steers --------------------------------------------------------
 const steer = await page.evaluate(() => {

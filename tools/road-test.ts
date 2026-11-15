@@ -7,6 +7,7 @@
 import { Terrain } from '../src/world/Terrain';
 import { RoadNetwork } from '../src/world/RoadNetwork';
 import { RoadFlattener } from '../src/world/RoadFlattener';
+import { WORLD_HALF } from '../src/world/Terrain';
 
 function main(): void {
   const terrain = new Terrain(1337);
@@ -92,6 +93,62 @@ function main(): void {
   }
   console.log(`  road lookup    : ${covered} points resolved to their own road`);
 
+  // --- no road of zero length: they are the sign of a broken junction ---
+  let empty = 0;
+  for (const edge of roads.edges) {
+    if (edge.length < 1) empty += 1;
+  }
+  console.log(`  empty roads    : ${empty}`);
+
+  // --- the map has a fixed border: no road may leave the world ---
+  let outside = 0;
+  let furthest = 0;
+  for (const edge of roads.edges) {
+    for (let i = 0; i < edge.points.length; i += 2) {
+      const radius = Math.max(Math.abs(edge.points[i]), Math.abs(edge.points[i + 1]));
+      if (radius > furthest) furthest = radius;
+      if (radius > WORLD_HALF) outside += 1;
+    }
+  }
+  console.log(
+    `  map border     : ${outside} points outside the ${WORLD_HALF} m border, the furthest is ${furthest.toFixed(0)} m from the centre`,
+  );
+
+  // --- the map never grows: building it again gives the same map ---
+  const fingerprint = (network: RoadNetwork): string =>
+    network.edges
+      .map((edge) => `${edge.a}-${edge.b}:${edge.type}:${edge.points.length}`)
+      .join('|');
+  const second = new RoadNetwork();
+  second.build(1337, terrain);
+  const sameMap = fingerprint(second) === fingerprint(roads);
+  console.log(`  map is fixed   : ${sameMap ? 'yes' : 'NO'} (two builds are identical)`);
+
+  // --- every country road starts at a real junction on the highway ---
+  const highwayNodes = new Set<number>();
+  for (const edge of roads.edges) {
+    if (edge.type !== 'highway' && edge.type !== 'avenue') continue;
+    highwayNodes.add(edge.a);
+    highwayNodes.add(edge.b);
+  }
+  let dangling = 0;
+  let rural = 0;
+  for (const edge of roads.edges) {
+    if (edge.type !== 'rural') continue;
+    rural += 1;
+    // The country road has to hang on the highway at one end. The other
+    // end is a dead end out in the fields.
+    if (!highwayNodes.has(edge.a) && !highwayNodes.has(edge.b)) {
+      dangling += 1;
+      console.log(
+        `    hanging: rural #${edge.id} from (${roads.nodes[edge.a].x.toFixed(0)}, ${roads.nodes[edge.a].z.toFixed(0)}) to (${roads.nodes[edge.b].x.toFixed(0)}, ${roads.nodes[edge.b].z.toFixed(0)})`,
+      );
+    }
+  }
+  console.log(
+    `  country roads  : ${rural} roads, ${dangling} of them hang in the air`,
+  );
+
   // --- ASCII map of the roads ---
   const size = 76;
   const step = 8000 / size;
@@ -131,6 +188,30 @@ function main(): void {
   }
   console.log('\nRoad map (= highway, # avenue, - street, ~ coastal, ^ switchback):');
   for (const line of map) console.log('  ' + line);
+
+  for (const edge of roads.edges) {
+    let edgeOut = 0;
+    for (let i = 0; i < edge.points.length; i += 2) {
+      if (Math.max(Math.abs(edge.points[i]), Math.abs(edge.points[i + 1])) > WORLD_HALF) edgeOut += 1;
+    }
+    if (edgeOut > 0) {
+      console.log(
+        `    outside: ${edge.type} #${edge.id} from (${edge.points[0].toFixed(0)}, ${edge.points[1].toFixed(0)}) to (${edge.points[edge.points.length - 2].toFixed(0)}, ${edge.points[edge.points.length - 1].toFixed(0)}) - ${edgeOut} points`,
+      );
+    }
+  }
+
+  // --- the result ---
+  const problems: string[] = [];
+  if (outside > 0) problems.push(`${outside} road points lie outside the map`);
+  if (!sameMap) problems.push('the map changes between two builds');
+  if (dangling > 0) problems.push(`${dangling} country roads hang in the air`);
+  if (empty > 0) problems.push(`${empty} roads have zero length`);
+  if (problems.length > 0) {
+    console.log('\nFAILED: ' + problems.join(', '));
+    process.exit(1);
+  }
+  console.log('\nOK: the map is fixed and stays inside its border.');
 }
 
 main();

@@ -256,7 +256,8 @@ Single large animated plane (simple shader, vertex wobble). Low depth, no reflec
     color: string;
   }
   ```
-- Aids that make it arcade-friendly: speed-sensitive steering, anti-roll, light stability/countersteer assist, handbrake drift, auto-reverse, auto gearbox, air control.
+- Aids that make it arcade-friendly: speed-sensitive steering, anti-roll, light stability/countersteer assist, handbrake drift, auto gearbox, air control.
+- The brake only ever stops the car. The reverse is a separate pedal (the player asks for it), it has its own speed limit and it stays engaged until the throttle is pressed.
 - Damage: cosmetic only (optional wobble/body dents are stretch goals). No car destruction.
 - Reset button: flip car upright at the nearest road.
 
@@ -286,7 +287,7 @@ Chase (default), far chase, hood, cockpit (simple), free orbit in photo mode. Ke
 ### 7.4 Controls
 | Action | Keyboard | Touch |
 |---|---|---|
-| Throttle / Brake-Reverse | W/↑, S/↓ | On-screen pedals |
+| Throttle / Brake / Reverse | W/↑, S/↓, X | On-screen pedals (GAS, BRAKE, REV) |
 | Steer | A/D, ←/→ | Left/right buttons or tilt (optional) |
 | Handbrake | Space | Button |
 | Camera | C | Button |

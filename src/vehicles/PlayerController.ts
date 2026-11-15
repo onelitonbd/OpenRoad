@@ -28,7 +28,13 @@ export class PlayerController {
     this.reversing = vehicle.currentGear < 0;
     this.drifting = input.handbrake;
 
-    vehicle.setControls(input.throttle, input.brake, this.steerValue, input.handbrake);
+    vehicle.setControls(
+      input.throttle,
+      input.brake,
+      this.steerValue,
+      input.handbrake,
+      input.reverse,
+    );
   }
 
   /** Reset the smoothed steering (used after a car reset). */

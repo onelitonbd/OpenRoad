@@ -73,6 +73,39 @@ async function launchBrowser() {
   }
 }
 
+/**
+ * Reads the state of the road network: how many roads there are, a
+ * fingerprint of their geometry and how many of them lie outside the
+ * fixed border of the map (4000 m from the centre).
+ */
+async function readMapState(page) {
+  return page.evaluate(() => {
+    const roads = window.openRoad?.world?.roads;
+    if (!roads) return { edges: 0, nodes: 0, signature: 'none', outside: -1 };
+    let outside = 0;
+    let hash = 0;
+    for (const edge of roads.edges) {
+      for (let i = 0; i < edge.points.length; i += 2) {
+        const x = edge.points[i];
+        const z = edge.points[i + 1];
+        if (Math.max(Math.abs(x), Math.abs(z)) > 4000) outside += 1;
+      }
+      // A fingerprint of the road: it has to stay the same while the
+      // player drives - no road may appear out of nowhere.
+      const part = `${edge.id}:${edge.type}:${edge.points.length}:${edge.a}:${edge.b}`;
+      for (let i = 0; i < part.length; i++) {
+        hash = (Math.imul(hash, 31) + part.charCodeAt(i)) | 0;
+      }
+    }
+    return {
+      edges: roads.edges.length,
+      nodes: roads.nodes.length,
+      signature: hash.toString(16),
+      outside,
+    };
+  });
+}
+
 const browser = await launchBrowser();
 const page = await browser.newPage({ viewport: { width: 1280, height: 720 } });
 
@@ -90,6 +123,8 @@ const report = {
   traffic: [],
   debugOverlay: null,
   mobile: null,
+  map: null,
+  gearbox: null,
 };
 
 try {
@@ -99,10 +134,22 @@ try {
   // Let the world stream in and the traffic spawn.
   await page.waitForTimeout(8000);
 
+  // The road network has to stay exactly the same while the player
+  // drives: no road may appear out of nowhere.
+  const mapBefore = await readMapState(page);
+
   // Drive for a moment so the physics and the traffic are awake.
   await page.keyboard.down('KeyW');
   await page.waitForTimeout(6000);
   await page.keyboard.up('KeyW');
+
+  const mapAfter = await readMapState(page);
+  report.map = {
+    before: mapBefore,
+    after: mapAfter,
+    stable: mapBefore.signature === mapAfter.signature,
+    insideBounds: mapAfter.outside === 0,
+  };
 
   // Sample the traffic a few times, so we can see the cars moving.
   for (let i = 0; i < 5; i++) {
@@ -127,6 +174,29 @@ try {
     report.traffic.push(sample);
     await page.waitForTimeout(2000);
   }
+
+  // The brake has to stop the car and it may not engage the reverse gear.
+  // The reverse is a pedal of its own.
+  await page.keyboard.down('KeyS');
+  await page.waitForTimeout(6000);
+  const braking = await page.evaluate(() => ({
+    gear: window.openRoad?.vehicle?.currentGear ?? 0,
+    speed: window.openRoad?.vehicle?.forwardSpeed ?? 0,
+  }));
+  await page.keyboard.up('KeyS');
+  await page.keyboard.down('KeyX');
+  await page.waitForTimeout(5000);
+  const reversing = await page.evaluate(() => ({
+    gear: window.openRoad?.vehicle?.currentGear ?? 0,
+    speed: window.openRoad?.vehicle?.forwardSpeed ?? 0,
+  }));
+  await page.keyboard.up('KeyX');
+  report.gearbox = {
+    brakeGear: braking.gear,
+    brakeSpeed: braking.speed,
+    reverseGear: reversing.gear,
+    reverseSpeed: reversing.speed,
+  };
 
   // Open the debug overlay for the AI numbers.
   await page.keyboard.press('F3');
@@ -225,6 +295,12 @@ report.ok =
   last.physics > 0 &&
   anyMoving &&
   last.below === 0 &&
+  !!report.map &&
+  report.map.stable &&
+  report.map.insideBounds &&
+  !!report.gearbox &&
+  report.gearbox.brakeGear > 0 &&
+  report.gearbox.reverseGear < 0 &&
   !!mobile &&
   mobile.controlsVisible &&
   mobile.hasFullscreen &&
@@ -251,6 +327,8 @@ if (process.env.GITHUB_STEP_SUMMARY) {
     `- FPS: ${report.stats?.fps ?? 'n/a'}`,
     `- Chunks: ${report.stats?.chunksLoaded ?? 'n/a'} loaded / ${report.stats?.chunkQueue ?? 'n/a'} queued`,
     `- Traffic: ${last ? `${last.cars} cars, ${last.physics} with physics, ${last.moving} moving` : 'n/a'}`,
+    `- Map: ${report.map ? `${report.map.after.edges} roads, unchanged while driving: ${report.map.stable ? 'yes' : 'no'}, all inside the border: ${report.map.insideBounds ? 'yes' : 'no'}` : 'n/a'}`,
+    `- Gearbox: brake gear ${report.gearbox?.brakeGear ?? 'n/a'}, reverse gear ${report.gearbox?.reverseGear ?? 'n/a'} at ${(report.gearbox?.reverseSpeed ?? 0).toFixed(1)} m/s`,
     `- Phone: ${mobile ? `${mobile.buttons} touch buttons, full screen ${mobile.hasFullscreen ? 'yes' : 'no'}, "turn your phone" in portrait: ${mobile.rotateVisibleInPortrait ? 'yes' : 'no'}` : 'n/a'}`,
     '',
     '```',

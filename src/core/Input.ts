@@ -15,6 +15,8 @@ export interface InputState {
   steer: number;
   /** True while the handbrake is held. */
   handbrake: boolean;
+  /** 0..1 of the reverse pedal. */
+  reverse: number;
 }
 
 export type ActionName =
@@ -22,6 +24,7 @@ export type ActionName =
   | 'back'
   | 'left'
   | 'right'
+  | 'reverse'
   | 'handbrake'
   | 'camera'
   | 'reset'
@@ -43,11 +46,18 @@ const KEY_MAP: Record<string, ActionName> = {
   ArrowLeft: 'left',
   KeyD: 'right',
   ArrowRight: 'right',
+  KeyX: 'reverse',
   Space: 'handbrake',
 };
 
 export class Input {
-  readonly state: InputState = { throttle: 0, brake: 0, steer: 0, handbrake: false };
+  readonly state: InputState = {
+    throttle: 0,
+    brake: 0,
+    steer: 0,
+    handbrake: false,
+    reverse: 0,
+  };
 
   private held = new Set<ActionName>();
   /** Actions that were pressed since the last `endFrame()` call. */
@@ -185,6 +195,8 @@ export class Input {
         ? digital
         : Math.max(-1, Math.min(1, this.analogSteer + digital));
     this.state.handbrake = this.isDown('handbrake');
+    // The reverse is a pedal of its own. The brake only ever brakes.
+    this.state.reverse = this.isDown('reverse') ? 1 : 0;
   }
 
   dispose(): void {

@@ -73,6 +73,14 @@ export class Vehicle {
   private brake = 0;
   private steerInput = 0;
   private handbrake = false;
+  /** 0..1 - the reverse pedal / the reverse key. */
+  private reverseInput = 0;
+  /** True while the reverse pedal was held the last time. */
+  private reverseWasHeld = false;
+  /** The player asked for the reverse gear and the car still has to stop. */
+  private reverseWanted = false;
+  /** The car is braking to a stop so the reverse gear can be engaged. */
+  private brakingForReverse = false;
 
   // --- drivetrain state ---
   private gear = 1;
@@ -261,12 +269,30 @@ export class Vehicle {
     return this.airborne;
   }
 
-  /** Feed the vehicle with control inputs. Called once per simulation step. */
-  setControls(throttle: number, brake: number, steer: number, handbrake: boolean): void {
+  /**
+   * Feed the vehicle with control inputs. Called once per simulation step.
+   *
+   * The brake only ever brakes - the car never rolls backwards because of
+   * it. The reverse is a pedal of its own: the player has to ask for it.
+   */
+  setControls(
+    throttle: number,
+    brake: number,
+    steer: number,
+    handbrake: boolean,
+    reverse = 0,
+  ): void {
     this.throttle = clamp01(throttle);
     this.brake = clamp01(brake);
     this.steerInput = clamp(steer, -1, 1);
     this.handbrake = handbrake;
+    const reverseNow = clamp01(reverse);
+    // A new request: the reverse pedal went down.
+    if (reverseNow > 0.5 && !this.reverseWasHeld) {
+      this.reverseWanted = true;
+    }
+    this.reverseWasHeld = reverseNow > 0.5;
+    this.reverseInput = reverseNow;
   }
 
   /**
@@ -286,19 +312,32 @@ export class Vehicle {
     this.steerAngle += clamp(targetAngle - this.steerAngle, -rate, rate);
 
     // --- gearbox / reverse ---
-    // The reverse gear is engaged when the car is stopped and the brake is
-    // held. It stays engaged until the player asks for the forward gear
-    // again - otherwise the car would leave the reverse gear as soon as it
-    // started to roll backwards (that capped the reverse at 3 km/h).
+    // The reverse gear is a gear the player asks for - it is never a
+    // side effect of the brake. While the car is still rolling forward
+    // the brake is applied first, so the car stops and then reverses.
     const nearlyStopped = Math.abs(this.forwardSpeedValue) < 0.8;
     if (this.allowReverse) {
       if (this.gear < 0) {
-        if (this.throttle > 0.05) this.gear = 1;
-      } else if (nearlyStopped && this.brake > 0.05 && this.throttle < 0.05) {
-        this.gear = -1;
+        // The reverse gear stays until the player asks for the forward
+        // gear again.
+        if (this.throttle > 0.05) {
+          this.gear = 1;
+          this.reverseWanted = false;
+          this.brakingForReverse = false;
+        }
+      } else if (this.reverseWanted) {
+        if (nearlyStopped) {
+          this.gear = -1;
+          this.brakingForReverse = false;
+        } else {
+          // The car has to come to a stop first.
+          this.brakingForReverse = true;
+        }
       }
     } else if (this.gear < 0) {
       this.gear = 1;
+      this.reverseWanted = false;
+      this.brakingForReverse = false;
     }
     const reversing = this.gear < 0;
 
@@ -307,20 +346,27 @@ export class Vehicle {
     let brakeForce = 0;
 
     if (reversing) {
-      // The brake key becomes the reverse accelerator.
-      engineForce = -this.brake * cfg.engineForce * this.tuning.engine * 0.6;
+      // The reverse pedal drives the car backwards.
+      engineForce = -this.reverseInput * cfg.engineForce * this.tuning.engine * 0.6;
       // The reverse gear has a speed limit of its own.
       const reverseSpeed = Math.max(0, -this.forwardSpeedValue);
       if (reverseSpeed >= MAX_REVERSE_MS) engineForce = 0;
-      // The brake was released while the car was rolling backwards: slow it
-      // down instead of letting it roll away.
-      if (this.brake <= 0.02) {
+      if (this.brake > 0.02) {
+        // The brake always wins - it stops the car.
+        engineForce = 0;
+        brakeForce = this.brake * cfg.brakeForce * this.tuning.brake;
+      } else if (this.reverseInput <= 0.02) {
+        // The reverse pedal was released: the car slows down instead of
+        // rolling away.
         brakeForce = cfg.brakeForce * this.tuning.brake * 0.5;
       }
     } else if (this.brake > 0.02) {
       // Braking wins over the throttle (and Rapier ignores the brake on a
       // wheel that also has an engine force).
       brakeForce = this.brake * cfg.brakeForce * this.tuning.brake;
+    } else if (this.brakingForReverse) {
+      // Braking to a stop so that the reverse gear can be engaged.
+      brakeForce = cfg.brakeForce * this.tuning.brake;
     } else {
       engineForce = this.throttle * cfg.engineForce * this.tuning.engine;
       if (this.forwardSpeedValue >= maxSpeedMs) engineForce = 0;
@@ -574,6 +620,10 @@ export class Vehicle {
     this.gear = 1;
     this.rpm = this.config.idleRpm;
     this.steerAngle = 0;
+    this.reverseWanted = false;
+    this.brakingForReverse = false;
+    this.reverseInput = 0;
+    this.reverseWasHeld = false;
   }
 
   /**

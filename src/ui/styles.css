@@ -663,6 +663,12 @@ body {
   font-size: 13px;
 }
 
+.touch-btn.reverse {
+  width: 70px;
+  height: 70px;
+  font-size: 14px;
+}
+
 .touch-btn.handbrake {
   width: 70px;
   height: 70px;

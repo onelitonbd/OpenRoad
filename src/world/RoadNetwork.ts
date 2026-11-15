@@ -2,6 +2,7 @@ import type { Terrain } from './Terrain';
 import { Rng } from '../utils/random';
 import { clamp, clamp01, lerp } from '../utils/math';
 import { RoadFlattener } from './RoadFlattener';
+import { WORLD_HALF } from './Terrain';
 
 /** The kind of road - decides the width, the lanes and the speed limit. */
 export type RoadType = 'highway' | 'avenue' | 'street' | 'rural' | 'coastal' | 'switchback';
@@ -175,20 +176,32 @@ export class RoadNetwork {
     this.terrain = terrain;
 
     const rng = new Rng(seed ^ 0x51ed270b);
+    // The order matters: the coast and the mountain road are built first,
+    // so the highways can end exactly at their junctions. Every road is
+    // part of the network from the start - nothing is invented later.
     this.buildDowntown(rng);
     this.buildSuburbs(rng);
-    this.buildHighways(terrain);
+    const coast = this.buildCoast(rng);
+    const mountain = this.buildMountains(rng);
+    this.buildHighways(terrain, coast, mountain);
     this.buildRural(rng);
-    this.buildMountains(rng);
-    this.buildCoast(rng);
     this.connectComponents();
     this.finalize();
   }
 
   // ---------------------------------------------------------------- helpers
 
+  /**
+   * Add a node. The position is clamped into the world: the map has a
+   * fixed border and no road may lead out of it.
+   */
   private addNode(x: number, z: number): number {
-    this.nodes.push({ id: this.nodes.length, x, z });
+    const limit = WORLD_HALF - 60;
+    this.nodes.push({
+      id: this.nodes.length,
+      x: clamp(x, -limit, limit),
+      z: clamp(z, -limit, limit),
+    });
     return this.nodes.length - 1;
   }
 
@@ -214,6 +227,12 @@ export class RoadNetwork {
   /** Add an edge with an explicit centre line. */
   private addEdge(a: number, b: number, type: RoadType, points: number[]): RoadEdge | null {
     if (points.length < 4) return null;
+    // The centre line may never leave the world either.
+    const limit = WORLD_HALF - 60;
+    for (let i = 0; i < points.length; i += 2) {
+      points[i] = clamp(points[i], -limit, limit);
+      points[i + 1] = clamp(points[i + 1], -limit, limit);
+    }
     const spec = ROAD_SPECS[type];
     const length = polylineLength(points);
     const edge: RoadEdge = {
@@ -345,49 +364,69 @@ export class RoadNetwork {
     }
   }
 
-  /** The big highways that connect the regions. */
-  private buildHighways(terrain: Terrain): void {
-    // Start and end points of the highways.
-    const routes: { from: [number, number]; to: [number, number]; via: [number, number][] }[] = [
-      // Downtown -> desert.
+  /**
+   * The big highways that connect the regions.
+   *
+   * The highways end exactly at the junctions of the coast and of the
+   * mountain road, so the whole network is one piece from the start.
+   */
+  private buildHighways(
+    terrain: Terrain,
+    coast: { west: number; east: number; junction: number },
+    mountain: { bottom: number },
+  ): void {
+    // The highways: where they start, where they end and where they turn.
+    const routes: {
+      from: [number, number];
+      to: [number, number];
+      via: [number, number][];
+      fromNode?: number;
+      toNode?: number;
+    }[] = [
+      // Downtown -> the desert in the east -> the coast in the south east.
       {
         from: [420, -120],
-        to: [3100, 420],
+        to: [2600, 2439],
         via: [
           [1100, -260],
-          [1800, -80],
-          [2450, 260],
+          [1900, -40],
+          [2500, 600],
+          [2680, 1500],
         ],
+        toNode: coast.east,
       },
-      // Downtown -> mountains.
+      // Downtown -> the mountains in the west.
       {
         from: [-420, -120],
-        to: [-3050, -620],
+        to: [-1700, -300],
         via: [
           [-1150, -260],
-          [-1900, -80],
-          [-2500, -420],
+          [-1450, -180],
         ],
+        toNode: mountain.bottom,
       },
-      // Downtown -> coast.
+      // Downtown -> the coast in the south. It ends at the junction in
+      // the middle of the coastal road.
       {
         from: [0, 430],
-        to: [420, 2450],
+        to: [400, 2460],
         via: [
           [-260, 900],
           [220, 1500],
           [-120, 2050],
         ],
+        toNode: coast.junction,
       },
-      // A ring highway around the city.
+      // The ring highway in the south, from the city to the west coast.
       {
         from: [1750, 1750],
-        to: [-1750, 1750],
+        to: [-2600, 2370],
         via: [
           [900, 2050],
           [-200, 2150],
-          [-1100, 2000],
+          [-1100, 2100],
         ],
+        toNode: coast.west,
       },
     ];
 
@@ -396,19 +435,15 @@ export class RoadNetwork {
       const smoothed = this.relaxSpline(control, terrain);
       const points = sampleSpline(smoothed, 18);
 
-      const a = this.addNode(route.from[0], route.from[1]);
-      const b = this.addNode(route.to[0], route.to[1]);
+      const a = route.fromNode ?? this.addNode(route.from[0], route.from[1]);
+      const b = route.toNode ?? this.addNode(route.to[0], route.to[1]);
       const edge = this.addEdge(a, b, 'highway', points);
-      if (edge) {
-        // Connect the highway to the closest existing node so the network is
-        // one connected graph.
-        const startNode = this.nearestNode(route.from[0], route.from[1], 600);
-        if (startNode && startNode.id !== a) {
-          this.addStraightEdge(startNode.id, a, 'avenue', 16);
-        }
+      if (edge && route.fromNode === undefined) {
+        // The highway has to start in the network. The node of the route
+        // itself does not count - it would be a road of zero length.
+        this.attachRoadEnd(a, 'avenue', 1400, [a, b]);
       }
     }
-
   }
 
   /**
@@ -499,23 +534,36 @@ export class RoadNetwork {
   }
 
   /** A zig-zag road that climbs the mountains. */
-  private buildMountains(rng: Rng): void {
+  private buildMountains(rng: Rng): { bottom: number; top: number } {
     let x = -1700;
     let z = -300;
-    let previous = this.addNode(x, z);
+    const first = this.addNode(x, z);
+    let previous = first;
     const direction = -1;
+    // The road climbs towards the corner of the map and stops before the
+    // border - it must not lead out of the world.
+    const limit = WORLD_HALF - 320;
 
     for (let i = 0; i < 9; i++) {
       z += direction * rng.range(260, 420);
       x += rng.range(-420, -260);
+      if (Math.max(Math.abs(x), Math.abs(z)) > limit) break;
       const node = this.addNode(x, z);
       this.addStraightEdge(previous, node, 'switchback', 16);
       previous = node;
     }
+
+    // The bottom of the mountain road is a junction with the highway
+    // from downtown, the top is a dead end at a viewpoint.
+    return { bottom: first, top: previous };
   }
 
-  /** A road that follows the coastline. */
-  private buildCoast(rng: Rng): void {
+  /**
+   * A road that follows the coastline.
+   *
+   * The road is built first, so the highways can end at its junctions.
+   */
+  private buildCoast(rng: Rng): { west: number; east: number; junction: number } {
     const control: number[][] = [];
     for (let i = 0; i <= 10; i++) {
       const x = -2600 + (i / 10) * 5200;
@@ -523,9 +571,62 @@ export class RoadNetwork {
       control.push([x, z]);
     }
     const points = sampleSpline(control, 20);
-    const a = this.addNode(control[0][0], control[0][1]);
-    const b = this.addNode(control[control.length - 1][0], control[control.length - 1][1]);
-    this.addEdge(a, b, 'coastal', points);
+    const west = this.addNode(control[0][0], control[0][1]);
+    const east = this.addNode(control[control.length - 1][0], control[control.length - 1][1]);
+    const edge = this.addEdge(west, east, 'coastal', points);
+
+    // In the middle of the coastal road the highway from downtown joins
+    // in. The road is split there, so it is a real junction.
+    let junction = east;
+    if (edge) {
+      const index = this.nearestPointIndex(edge, 400, 2460);
+      junction = this.splitEdgeAt(edge, index);
+    }
+    return { west, east, junction };
+  }
+
+  /** The index of the point of an edge that is nearest to a position. */
+  private nearestPointIndex(edge: RoadEdge, x: number, z: number): number {
+    let best = 0;
+    let bestDistance = Infinity;
+    for (let i = 0; i < edge.points.length; i += 2) {
+      const distance = Math.hypot(edge.points[i] - x, edge.points[i + 1] - z);
+      if (distance < bestDistance) {
+        bestDistance = distance;
+        best = i / 2;
+      }
+    }
+    return best;
+  }
+
+  /**
+   * Connect the end of a road to the network.
+   *
+   * The road keeps its own node, so the new road really starts there.
+   * Without this, a road that was built on its own would hang in the air
+   * and the component fixer would later build a long diagonal road to
+   * join it - that is how roads used to appear out of nowhere.
+   */
+  private attachRoadEnd(
+    nodeId: number,
+    type: RoadType,
+    maxDistance: number,
+    exclude: number[] = [],
+  ): void {
+    const node = this.nodes[nodeId];
+    if (!node) return;
+    let best: RoadNode | null = null;
+    let bestDistance = maxDistance;
+    for (const candidate of this.nodes) {
+      if (candidate.id === nodeId || exclude.includes(candidate.id)) continue;
+      const distance = Math.hypot(candidate.x - node.x, candidate.z - node.z);
+      if (distance < bestDistance) {
+        bestDistance = distance;
+        best = candidate;
+      }
+    }
+    if (!best) return;
+    this.addStraightEdge(nodeId, best.id, type, 16);
   }
 
   /**

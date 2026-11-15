@@ -8,7 +8,8 @@ import { isFullscreen } from '../core/Mobile';
  *
  * - bottom left: the steering buttons and a drag area that steers like a
  *   wheel (drag left or right from the spot you touched),
- * - bottom right: the gas and the brake pedal plus the handbrake,
+ * - bottom right: the gas, the brake and the reverse pedal plus the
+ *   handbrake,
  * - top left: the small buttons (camera, lights, horn, reset, pause and
  *   full screen).
  *
@@ -109,9 +110,10 @@ export class TouchControls {
     const pedals = document.createElement('div');
     pedals.className = 'touch-pedals';
     const handbrake = this.makeButton('HAND<br>BRAKE', 'Handbrake', 'handbrake', 'handbrake');
-    const brake = this.makeButton('BRAKE', 'Brake and reverse', 'brake', 'back');
+    const brake = this.makeButton('BRAKE', 'Brake', 'brake', 'back');
+    const reverse = this.makeButton('REV', 'Drive backwards', 'reverse', 'reverse');
     const gas = this.makeButton('GAS', 'Accelerate', 'throttle', 'forward');
-    pedals.append(handbrake, brake, gas);
+    pedals.append(handbrake, brake, reverse, gas);
     this.root.appendChild(pedals);
 
     parent.appendChild(this.root);
