@@ -1,22 +1,10 @@
 {
   "url": "https://openroad-six-ivory.vercel.app/",
-  "ok": true,
-  "errors": [],
-  "stats": {
-    "fps": 4,
-    "drawCalls": 168,
-    "triangles": 59070,
-    "geometries": 171,
-    "textures": 6,
-    "chunksLoaded": 44,
-    "chunkQueue": 0,
-    "position": [
-      386.5049743652344,
-      5.850094318389893,
-      1.5930171012878418
-    ],
-    "speedKmh": 8
-  },
+  "ok": false,
+  "errors": [
+    "fatal: page.evaluate: TypeError: renderer.hasMesh is not a function\n    at eval (eval at evaluate (:370:30), <anonymous>:8:53)\n    at Array.filter (<anonymous>)\n    at eval (eval at evaluate (:370:30), <anonymous>:8:26)\n    at UtilityScript.evaluate (<anonymous>:372:16)\n    at UtilityScript.<anonymous> (<anonymous>:1:44)"
+  ],
+  "stats": null,
   "traffic": [
     {
       "t": 19,
@@ -29,17 +17,17 @@
         33,
         28,
         33,
-        50,
+        49,
         33,
         33,
-        15,
-        50,
+        14,
+        49,
         33,
-        37,
+        36,
         33,
-        29,
-        24,
-        31
+        28,
+        22,
+        30
       ]
     },
     {
@@ -50,17 +38,17 @@
       "below": 0,
       "speeds": [
         28,
-        35,
+        34,
         28,
-        35,
-        52,
-        35,
-        35,
+        34,
+        51,
+        34,
+        34,
         17,
-        52,
-        35,
-        40,
-        35,
+        51,
+        34,
+        39,
+        34,
         28,
         27,
         33
@@ -80,12 +68,12 @@
         53,
         35,
         35,
-        21,
+        19,
         53,
         35,
-        43,
+        41,
         35,
-        26,
+        27,
         28,
         34
       ]
@@ -101,15 +89,15 @@
         36,
         28,
         36,
-        54,
+        53,
         36,
         36,
-        23,
-        54,
+        22,
+        53,
         36,
-        45,
+        43,
         36,
-        24,
+        25,
         28,
         35
       ]
@@ -139,7 +127,7 @@
       ]
     }
   ],
-  "debugOverlay": "FPS 4  (13530.6 ms)\ndraw calls 168\ntriangles 59,070\ngeometries 171  textures 6\nheap 35.3 MB\nchunks 44 loaded / 0 queued\nai 15 active / 5 physics\ntraffic lights 96\npos 387, 1",
+  "debugOverlay": null,
   "mobile": {
     "controlsVisible": true,
     "buttons": 12,
@@ -165,8 +153,9 @@
   },
   "gearbox": {
     "brakeGear": 1,
-    "brakeSpeed": 0.002253506573097238,
+    "brakeSpeed": 0.030367444834249527,
     "reverseGear": -1,
-    "reverseSpeed": -1.8975540004705862
-  }
+    "reverseSpeed": -2.0959897682578847
+  },
+  "roadMeshes": null
 }
