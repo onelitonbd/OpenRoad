@@ -41,11 +41,16 @@ The current build is deployed on the production alias:
 
 **https://openroad-six-ivory.vercel.app/**
 
-It is served by Vercel deployment `dpl_BMx7zw4tPQDWNVNcChchShXm7K8T`
-(built from commit `755d55b`, state `READY`, substate `PROMOTED`, aliases
+It is served by Vercel deployment `dpl_A4jtFaXGRB2Z4QLdHMcKZseFra91`
+(built from commit `bccb9ab`, state `READY`, substate `PROMOTED`, aliases
 `openroad-six-ivory.vercel.app`, `openroad-onelitonbds-projects.vercel.app`
 and the branch alias). The deployment is checked with the production smoke
 test below - on the desktop **and** as a phone.
+
+The smoke test also checks the two things that were broken: the road
+network has to stay exactly the same while the player drives (no road
+may appear out of nowhere), and the brake has to stop the car without
+engaging the reverse gear.
 
 ## Controls
 
