@@ -75,6 +75,8 @@ export class Game {
   private rotateOverlay: RotateOverlay | null = null;
   /** The meshes of the head lights of the player car. */
   private headlightMeshes: THREE.Mesh[] = [];
+  /** True when the player was warned about the edge of the map. */
+  private warnedAboutEdge = false;
   private headlightsOn = false;
   /** The pause screen, created the first time the game is paused. */
   private pauseOverlay: HTMLDivElement | null = null;
@@ -455,6 +457,16 @@ export class Game {
     // The minimap follows the player and shows the AI cars.
     this.minimap.setTraffic(this.traffic.mapPositions());
     this.minimap.update(position.x, position.z, this.vehicle.heading);
+
+    // The map has a fixed size. Warn the player before they drive into
+    // the sea at the edge of the world.
+    if (!this.warnedAboutEdge) {
+      const toEdge = WORLD_HALF - Math.max(Math.abs(position.x), Math.abs(position.z));
+      if (toEdge < 600) {
+        this.warnedAboutEdge = true;
+        this.hud.showToast('You are leaving the map - turn back', 3.5);
+      }
+    }
 
     // Debug information.
     this.debug.extra.aiActive = this.traffic.count;

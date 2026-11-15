@@ -68,6 +68,10 @@ test below - on the desktop **and** as a phone.
 
 Cameras: chase (default), far chase, hood and cockpit.
 
+The brake stops the car and then becomes the reverse accelerator: hold it
+and the car drives backwards (up to 29 km/h). Press the throttle to drive
+forward again.
+
 ## On a phone
 
 The game detects a phone or a tablet and then shows the on-screen controls:
@@ -107,6 +111,13 @@ mast in the mountains). They are drawn on the minimap.
 
 Everything is generated from one seed (currently `1337`), so the world is
 the same every time you start the game.
+
+The map is **fixed**: 8 km by 8 km, built once when the game starts. No
+road is ever created while you drive - what appears in front of you is
+the terrain streaming in (the fog hides the border). The edge of the map
+is drawn on the minimap, and the land falls into the sea there, so you
+can see where the world ends. `tools/smoke/shots/map.png` is the whole
+road network in one picture.
 
 ## The traffic
 
@@ -164,6 +175,7 @@ npm run test:traffic         # ten minutes of AI traffic: no jams, no crashes
 npm run test:traffic-poles   # the traffic lights stand next to the road
 npm run test:traffic-player  # the player can hit an AI car and it reacts
 npm run test:mobile          # the touch controls on a phone in landscape
+npm run test:map-shot        # a picture of the whole road network
 ```
 
 ### Head-less browser test

@@ -135,6 +135,12 @@ export class Minimap {
       ctx.arc(px, py, 4, 0, Math.PI * 2);
       ctx.fill();
     }
+
+    // The border of the map. The world has a fixed size - the land ends
+    // here and the sea begins.
+    ctx.strokeStyle = 'rgba(255, 122, 92, 0.9)';
+    ctx.lineWidth = 5;
+    ctx.strokeRect(3, 3, this.mapSize - 6, this.mapSize - 6);
   }
 
   /** Switch between a north-up map and a map that turns with the car. */

@@ -215,6 +215,8 @@ Use a **low-poly cartoon palette** with flat/gradient colors; few textures.
   3. Connect region centers with **highways** (smooth splines avoiding steep slopes).
   4. Add rural roads branching from highways.
   5. Add mountain switchbacks and a coastal road.
+- The rural roads leave the highway at a **right angle** and the highway is split at that point, so every branch is a real T-junction. No road may start in the middle of another road.
+- The map has a fixed border: it is drawn on the minimap and the player gets a "turn back" message near the edge.
 - Each chunk asks the graph for edges that intersect it and builds meshes for those only.
 - Road mesh: extrude a ribbon along the spline with sidewalk/curb in cities; lane markings via a tiled texture or instanced dashes.
 - Roads sit slightly above terrain (+0.05 m) to avoid z-fighting; terrain is flattened to match.

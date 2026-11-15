@@ -81,6 +81,37 @@ async function main(): Promise<void> {
     vehicle.update(dt);
   }
   report(vehicle, 'after braking');
+
+  // The brake becomes the reverse accelerator: the car has to drive
+  // backwards at a useful speed, not crawl along at 3 km/h.
+  console.log('--- reverse (keep the brake held) ---');
+  const start = vehicle.body.translation();
+  for (let i = 0; i < 180; i++) {
+    vehicle.setControls(0, 1, 0, false);
+    vehicle.prepareStep(dt);
+    vehicle.applyPhysics(dt);
+    physics.step();
+    vehicle.update(dt);
+    if (i % 60 === 59) {
+      report(vehicle, `reverse t=${((i + 1) * dt).toFixed(1)}s`);
+    }
+  }
+  report(vehicle, 'after reversing');
+
+  const end = vehicle.body.translation();
+  const reverseKmh = Math.abs(vehicle.forwardSpeed) * 3.6;
+  const moved = Math.hypot(end.x - start.x, end.z - start.z);
+  const backwards = vehicle.forwardSpeed < 0;
+  console.log(
+    `reverse speed: ${reverseKmh.toFixed(1)} km/h, ${moved.toFixed(1)} m ` +
+      `(${backwards ? 'backwards' : 'FORWARDS'})`,
+  );
+  if (reverseKmh < 15 || moved < 5 || !backwards) {
+    console.log(`FAILED: the reverse gear is too slow (${reverseKmh.toFixed(1)} km/h)`);
+    process.exitCode = 1;
+    return;
+  }
+  console.log('OK: the car drives backwards at a useful speed.');
 }
 
 function report(vehicle: Vehicle, label: string): void {

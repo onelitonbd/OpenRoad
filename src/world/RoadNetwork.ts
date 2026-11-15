@@ -130,6 +130,15 @@ function sampleSpline(control: number[][], spacing: number): number[] {
   return out;
 }
 
+/** The length of a polyline that is stored as a flat list of x and z. */
+function polylineLength(points: number[]): number {
+  let length = 0;
+  for (let i = 0; i < points.length - 2; i += 2) {
+    length += Math.hypot(points[i + 2] - points[i], points[i + 3] - points[i + 1]);
+  }
+  return length;
+}
+
 /**
  * The road graph of the world.
  *
@@ -168,7 +177,7 @@ export class RoadNetwork {
     const rng = new Rng(seed ^ 0x51ed270b);
     this.buildDowntown(rng);
     this.buildSuburbs(rng);
-    this.buildHighways(rng, terrain);
+    this.buildHighways(terrain);
     this.buildRural(rng);
     this.buildMountains(rng);
     this.buildCoast(rng);
@@ -206,10 +215,7 @@ export class RoadNetwork {
   private addEdge(a: number, b: number, type: RoadType, points: number[]): RoadEdge | null {
     if (points.length < 4) return null;
     const spec = ROAD_SPECS[type];
-    let length = 0;
-    for (let i = 0; i < points.length - 2; i += 2) {
-      length += Math.hypot(points[i + 2] - points[i], points[i + 3] - points[i + 1]);
-    }
+    const length = polylineLength(points);
     const edge: RoadEdge = {
       id: this.edges.length,
       a,
@@ -251,8 +257,8 @@ export class RoadNetwork {
     for (let iz = -half; iz <= half; iz++) {
       const row: number[] = [];
       for (let ix = -half; ix <= half; ix++) {
-        const x = ix * spacing + rng.range(-6, 6);
-        const z = iz * spacing + rng.range(-6, 6);
+        const x = ix * spacing + rng.range(-4, 4);
+        const z = iz * spacing + rng.range(-4, 4);
         row.push(this.addNode(x, z));
       }
       grid.push(row);
@@ -288,7 +294,9 @@ export class RoadNetwork {
       const nodes: number[] = [];
       for (let i = 0; i < ring.count; i++) {
         const angle = (i / ring.count) * Math.PI * 2;
-        const wobble = 1 + rng.range(-0.12, 0.12);
+        // Only a small wobble: the ring roads should be round, not a
+        // polygon with random corners.
+        const wobble = 1 + rng.range(-0.04, 0.04);
         const x = Math.cos(angle) * ring.radius * wobble;
         const z = Math.sin(angle) * ring.radius * wobble;
         nodes.push(this.addNode(x, z));
@@ -302,14 +310,28 @@ export class RoadNetwork {
       }
     }
 
-    // Radial connectors between the rings.
+    // Radial connectors between the rings. The outer node is picked by
+    // angle, so the connector really points away from the centre - before
+    // that they were skewed by up to 15 degrees.
     for (let r = 0; r < ringNodes.length - 1; r++) {
       const inner = ringNodes[r];
       const outer = ringNodes[r + 1];
-      const step = Math.max(1, Math.round(inner.length / outer.length));
-      for (let i = 0; i < inner.length; i += step) {
-        const outerIndex = Math.floor((i / inner.length) * outer.length) % outer.length;
-        this.addStraightEdge(inner[i], outer[outerIndex], 'street', 16);
+      for (const innerId of inner) {
+        const innerNode = this.nodes[innerId];
+        const innerAngle = Math.atan2(innerNode.z, innerNode.x);
+        let bestId = -1;
+        let bestDelta = Infinity;
+        for (const outerId of outer) {
+          const outerNode = this.nodes[outerId];
+          const outerAngle = Math.atan2(outerNode.z, outerNode.x);
+          let delta = Math.abs(outerAngle - innerAngle);
+          if (delta > Math.PI) delta = Math.PI * 2 - delta;
+          if (delta < bestDelta) {
+            bestDelta = delta;
+            bestId = outerId;
+          }
+        }
+        if (bestId >= 0) this.addStraightEdge(innerId, bestId, 'street', 16);
       }
     }
 
@@ -324,7 +346,7 @@ export class RoadNetwork {
   }
 
   /** The big highways that connect the regions. */
-  private buildHighways(rng: Rng, terrain: Terrain): void {
+  private buildHighways(terrain: Terrain): void {
     // Start and end points of the highways.
     const routes: { from: [number, number]; to: [number, number]; via: [number, number][] }[] = [
       // Downtown -> desert.
@@ -387,21 +409,6 @@ export class RoadNetwork {
       }
     }
 
-    // A couple of random country lanes so the map does not look too perfect.
-    for (let i = 0; i < 6; i++) {
-      const angle = rng.range(0, Math.PI * 2);
-      const x = Math.cos(angle) * rng.range(700, 1400);
-      const z = Math.sin(angle) * rng.range(700, 1400);
-      const node = this.nearestNode(x, z, 400);
-      if (node) {
-        const a = this.addNode(node.x, node.z);
-        const b = this.addNode(
-          node.x + rng.range(-500, 500),
-          node.z + rng.range(-500, 500),
-        );
-        this.addStraightEdge(a, b, 'street', 14);
-      }
-    }
   }
 
   /**
@@ -431,20 +438,64 @@ export class RoadNetwork {
 
   /** Small country roads branching away from the highways. */
   private buildRural(rng: Rng): void {
-    for (const edge of this.edges) {
-      if (edge.type !== 'highway' && edge.type !== 'avenue') continue;
-      const count = edge.type === 'highway' ? 4 : 2;
-      for (let i = 0; i < count; i++) {
-        const index = Math.floor(rng.range(0.15, 0.85) * (edge.points.length / 2 - 1)) * 2;
-        const x = edge.points[index];
-        const z = edge.points[index + 1];
-        const angle = rng.range(0, Math.PI * 2);
-        const length = rng.range(220, 620);
-        const a = this.addNode(x, z);
-        const b = this.addNode(x + Math.cos(angle) * length, z + Math.sin(angle) * length);
-        this.addStraightEdge(a, b, 'rural', 18);
+    // The country roads leave the highways at a right angle and the highway
+    // is split at that point, so the branch is a real T-junction. Before
+    // that the roads started in the middle of the highway without touching
+    // it - they looked like they were invented while you were driving.
+    for (const edge of [...this.edges]) {
+      if (edge.type !== 'highway') continue;
+      const half = edge.points.length / 2;
+      const spots: { index: number; nx: number; nz: number }[] = [];
+      for (let i = 0; i < 4; i++) {
+        const index = Math.max(1, Math.min(half - 2, Math.floor(rng.range(0.15, 0.85) * (half - 1))));
+        // The direction of the highway at that point.
+        const dx = edge.points[index * 2 + 2] - edge.points[index * 2];
+        const dz = edge.points[index * 2 + 3] - edge.points[index * 2 + 1];
+        const length = Math.hypot(dx, dz) || 1;
+        // The side the country road grows to.
+        const side = rng.range(0, 1) < 0.5 ? 1 : -1;
+        spots.push({ index, nx: (-dz / length) * side, nz: (dx / length) * side });
+      }
+      // Split from the back, so the other points keep their index.
+      spots.sort((a, b) => b.index - a.index);
+      for (const spot of spots) {
+        const nodeId = this.splitEdgeAt(edge, spot.index);
+        const node = this.nodes[nodeId];
+        const length = rng.range(320, 760);
+        const end = this.addNode(node.x + spot.nx * length, node.z + spot.nz * length);
+        this.addStraightEdge(nodeId, end, 'rural', 18);
       }
     }
+  }
+
+  /**
+   * Split an edge at one of its points and return the id of the new node.
+   *
+   * The first half keeps the id of the edge, the second half becomes a new
+   * edge. That way a road can branch off in the middle of another road.
+   */
+  private splitEdgeAt(edge: RoadEdge, index: number): number {
+    const originalEnd = edge.b;
+    const nodeId = this.addNode(edge.points[index * 2], edge.points[index * 2 + 1]);
+    const head = edge.points.slice(0, (index + 1) * 2);
+    const tail = edge.points.slice(index * 2);
+
+    edge.points = head;
+    edge.b = nodeId;
+    edge.length = polylineLength(head);
+    edge.heights = new Array(head.length / 2).fill(0);
+
+    const second: RoadEdge = {
+      ...edge,
+      id: this.edges.length,
+      a: nodeId,
+      b: originalEnd,
+      points: tail,
+      length: polylineLength(tail),
+      heights: new Array(tail.length / 2).fill(0),
+    };
+    this.edges.push(second);
+    return nodeId;
   }
 
   /** A zig-zag road that climbs the mountains. */

@@ -319,3 +319,39 @@ production test therefore closes the desktop page first.
 **third** argument. Our timeouts were passed as the second one, so they
 were used as the argument of the function and every test waited for the
 default 30 seconds. The phone needed longer than that on the runner.
+
+### The map is fixed - it is 8 km by 8 km and it never grows
+The world is generated **once**, when the game starts, from the seed 1337:
+`WORLD_SIZE` is 8000 m, so the map is a square of 8 km by 8 km. No road is
+ever created while you drive. What looks like a new road appearing in front
+of you is the chunk streaming: the 256 m chunks are built one after the
+other, nearest first, and the fog hides the border.
+
+To make the size of the map visible, the border is drawn on the minimap
+and the player gets a warning when they come within 600 m of the edge. The
+land falls into the sea there, so the map really does end.
+
+### The country roads branch off the highway at a right angle
+Before, the country roads started *in the middle* of a highway or an
+avenue without touching it: the graph had a floating node, and the
+component fixer joined them with a long diagonal road. That is what made
+it look as if the map invented roads while you were driving.
+
+Now the highway is **split** at that point (`splitEdgeAt`), so the branch
+is a real T-junction, and the country road leaves the highway at a right
+angle and runs straight. The country roads are the only roads that end in
+a dead end - the traffic turns around there, which it already knew how to
+do.
+
+### The ring roads are round and the connectors point outwards
+The rings around the city were polygons with a random radius of up to 12
+per cent, so every corner was a bend in the road. The wobble is now 4 per
+cent and the connectors between the rings are picked by angle, so they
+really point away from the centre instead of being skewed by 15 degrees.
+
+### The reverse gear stays in reverse
+The gearbox changed back to the forward gear as soon as the car was
+rolling backwards faster than 0.8 m/s - which is 3 km/h. That is why the
+car only crawled backwards. The reverse gear now stays until the player
+presses the throttle, the reverse has a speed limit of its own (29 km/h)
+and a released brake slows the car down instead of letting it roll away.

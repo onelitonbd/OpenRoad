@@ -38,6 +38,9 @@ export function defaultTuning(config: VehicleConfig): VehicleTuning {
 
 const FORWARD = new THREE.Vector3(0, 0, 1);
 
+/** How fast the car may drive backwards (about 29 km/h). */
+const MAX_REVERSE_MS = 8;
+
 /**
  * A drivable car.
  *
@@ -283,12 +286,16 @@ export class Vehicle {
     this.steerAngle += clamp(targetAngle - this.steerAngle, -rate, rate);
 
     // --- gearbox / reverse ---
+    // The reverse gear is engaged when the car is stopped and the brake is
+    // held. It stays engaged until the player asks for the forward gear
+    // again - otherwise the car would leave the reverse gear as soon as it
+    // started to roll backwards (that capped the reverse at 3 km/h).
     const nearlyStopped = Math.abs(this.forwardSpeedValue) < 0.8;
     if (this.allowReverse) {
-      if (nearlyStopped && this.brake > 0.05 && this.throttle < 0.05) {
+      if (this.gear < 0) {
+        if (this.throttle > 0.05) this.gear = 1;
+      } else if (nearlyStopped && this.brake > 0.05 && this.throttle < 0.05) {
         this.gear = -1;
-      } else if (this.gear === -1 && (this.throttle > 0.05 || !nearlyStopped)) {
-        this.gear = 1;
       }
     } else if (this.gear < 0) {
       this.gear = 1;
@@ -301,7 +308,15 @@ export class Vehicle {
 
     if (reversing) {
       // The brake key becomes the reverse accelerator.
-      engineForce = -this.brake * cfg.engineForce * this.tuning.engine * 0.55;
+      engineForce = -this.brake * cfg.engineForce * this.tuning.engine * 0.6;
+      // The reverse gear has a speed limit of its own.
+      const reverseSpeed = Math.max(0, -this.forwardSpeedValue);
+      if (reverseSpeed >= MAX_REVERSE_MS) engineForce = 0;
+      // The brake was released while the car was rolling backwards: slow it
+      // down instead of letting it roll away.
+      if (this.brake <= 0.02) {
+        brakeForce = cfg.brakeForce * this.tuning.brake * 0.5;
+      }
     } else if (this.brake > 0.02) {
       // Braking wins over the throttle (and Rapier ignores the brake on a
       // wheel that also has an engine force).
