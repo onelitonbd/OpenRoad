@@ -261,3 +261,19 @@ at least 1.3 m away from the kerb of every road around the junction.
 `tools/traffic-test.ts` simulates ten minutes of traffic and checks that the
 cars stay on the roads, do not fall through the world, do not get stuck and
 keep moving. The head-less test found every one of the bugs above.
+
+### The deployed build is checked on a GitHub runner
+The machine that develops the game can only reach GitHub, npm and PyPI: a
+request to the deployment host is closed by the network before the TLS
+handshake. A browser check against the live URL is therefore not possible
+from the sandbox, so `tools/smoke/production-smoke.mjs` runs in the
+workflow `.github/workflows/production-smoke.yml` on a GitHub runner, which
+has a normal internet connection. The workflow keeps the report and the
+screenshot in the branch, so the result of the check is part of the
+repository.
+
+### The smoke test drives before it looks at the traffic
+A freshly loaded game has no traffic yet: the cars spawn in a ring around
+the player after the first frames. The production smoke test therefore
+drives for a few seconds before it reads the traffic, otherwise it would
+report an empty street for a working build.

@@ -35,6 +35,18 @@ GitHub Pages, Netlify or any static host.
 
 No environment variables are required for the current phase.
 
+### Live build
+
+The Phase 5 build is deployed on the production alias:
+
+**https://openroad-six-ivory.vercel.app/**
+
+It is served by Vercel deployment `dpl_2QLSVnfYHFWExx54dzmxdJ2nnYAv`
+(built from commit `1c94725`, state `READY`, substate `PROMOTED`, aliases
+`openroad-six-ivory.vercel.app`, `openroad-onelitonbds-projects.vercel.app`
+and the branch alias). The deployment is checked with the production smoke
+test below.
+
 ## Controls
 
 | Action | Keyboard | Touch |
@@ -134,11 +146,11 @@ npm run test:traffic-player  # the player can hit an AI car and it reacts
 ### Head-less browser test
 
 There is also a test that opens the real game in a head-less browser, drives
-it and takes a screenshot. It needs a Chromium build, so install the two
-extra packages first:
+it and takes a screenshot. It needs a Chromium build, which comes from the
+`@sparticuz/chromium` package (a development dependency):
 
 ```bash
-npm i -D @sparticuz/chromium playwright-core
+npm install
 npm run build
 npm run preview &          # serves the build on http://127.0.0.1:4173
 npm run test:smoke         # loads the game, drives it, prints the stats
@@ -151,6 +163,27 @@ npm run test:debug-shot    # a screenshot of the F3 debug view
 This is how most of the bugs in the world were found - the camera pointed
 the wrong way, the roads were invisible and the car fell through the
 terrain, none of that shows up in a unit test.
+
+### Production smoke test
+
+`tools/smoke/production-smoke.mjs` does the same thing against the
+**deployed** build: it loads the Vercel URL in Chromium, drives for a few
+seconds and checks that there are no console errors, that something was
+drawn and that the AI traffic is driving (cars, cars with physics, moving
+cars, no car under the ground). It writes a JSON report and a screenshot.
+
+The machine that develops the game can only reach GitHub, npm and PyPI, so
+the browser check against the deployment runs on a GitHub runner:
+
+```bash
+gh workflow run production-smoke --ref arena/5e01b9ed-openroad
+gh run watch
+```
+
+The workflow keeps the report in `tools/smoke/production-report.json` and
+the screenshot in `tools/smoke/shots/production-phase5.png`. The last run
+against the Phase 5 deployment reported 15 AI cars (3 with physics), all
+of them moving, 103 traffic lights, 162 draw calls and no console errors.
 
 ## Performance
 

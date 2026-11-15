@@ -403,6 +403,7 @@ Techniques the agent must use: instancing, chunk streaming in Web Workers, geome
 ## 14. Hosting & Deployment
 
 - **Vercel** (static site): push repo to GitHub → import to Vercel → build command `npm run build`, output `dist`. Free tier is sufficient.
+- The live build is on the production alias `https://openroad-six-ivory.vercel.app/`. After a deployment it is checked in a browser by `tools/smoke/production-smoke.mjs`, which runs in the GitHub workflow `production-smoke` (the development sandbox cannot reach the deployment host).
 - Large audio/model files: keep total small; use compression. If assets grow, host them on Supabase Storage or Cloudflare R2 free tier.
 - **Supabase** (later): auth + Postgres for cloud saves. Use only the public anon key client-side with RLS enabled. Never commit secrets; use `.env` + Vercel env vars (`VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`).
 - Firebase is a valid alternative; Supabase chosen for SQL + RLS simplicity.
