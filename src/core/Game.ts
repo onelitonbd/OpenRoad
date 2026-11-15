@@ -15,6 +15,7 @@ import { buildCarMesh } from '../vehicles/CarFactory';
 import { COMET_GT } from '../vehicles/cars';
 import { bus } from './EventBus';
 import { settings } from './Settings';
+import { TrafficManager } from '../ai/TrafficManager';
 import { ChunkManager } from '../world/ChunkManager';
 import { RoadRenderer } from '../world/RoadMesh';
 import { BuildingManager } from '../world/Buildings';
@@ -61,6 +62,8 @@ export class Game {
   props!: PropManager;
   /** The hand-placed landmarks (the tower, the lighthouse, the mills). */
   landmarks!: Landmarks;
+  /** The AI traffic. */
+  traffic!: TrafficManager;
   /** Draws the road graph when the debug overlay is open. */
   private roadDebug!: RoadGraphDebug;
 
@@ -129,6 +132,17 @@ export class Game {
     // The road graph is only drawn while the debug overlay is open.
     this.roadDebug = new RoadGraphDebug(this.world.roads);
     this.renderer.scene.add(this.roadDebug.object);
+
+    // --- the traffic ---
+    this.traffic = new TrafficManager(this.physics, this.world.roads, (x, z) =>
+      this.world.isLoadedAt(x, z),
+    );
+    // An AI car that is blocked by the player honks at them.
+    this.traffic.onHonk = () => {
+      this.hud.showToast('A driver honks at you!', 1.5);
+    };
+    this.renderer.scene.add(this.traffic.group);
+    this.renderer.scene.add(this.traffic.debugLines);
 
     this.minimap = new Minimap(this.uiRoot, this.world.roads, this.landmarks.list);
 
@@ -232,6 +246,7 @@ export class Game {
     if (this.input.wasPressed('debug')) {
       this.debug.toggle();
       this.roadDebug.visible = this.debug.isVisible;
+      this.traffic.setDebugVisible(this.debug.isVisible);
     }
     if (this.input.wasPressed('tuning')) this.tuningPanel.toggle();
 
@@ -264,8 +279,14 @@ export class Game {
     this.playerController.apply(this.input.state, this.vehicle, dt);
     this.vehicle.prepareStep(dt);
     this.vehicle.applyPhysics(dt);
+
+    // The AI cars prepare their physics as well, then everything is stepped
+    // at once.
+    this.traffic.update(dt, position.x, position.z);
+
     this.physics.step();
     this.vehicle.update(dt);
+    this.traffic.syncVisuals(dt);
   }
 
   /** Everything that runs once per rendered frame. */
@@ -278,7 +299,10 @@ export class Game {
     this.buildings.update(position.x, position.z);
     this.props.update(position.x, position.z);
     this.landmarks.update(dt);
-    if (this.roadDebug.visible) this.roadDebug.update(position.x, position.z);
+    if (this.roadDebug.visible) {
+      this.roadDebug.update(position.x, position.z);
+      this.traffic.updateDebugLines();
+    }
     this.water.update(dt);
     this.water.follow(position.x, position.z);
 
@@ -296,10 +320,15 @@ export class Game {
     });
     this.hud.updateTimers(dt);
 
-    // The minimap follows the player.
+    // The minimap follows the player and shows the AI cars.
+    this.minimap.setTraffic(this.traffic.mapPositions());
     this.minimap.update(position.x, position.z, this.vehicle.heading);
 
     // Debug information.
+    this.debug.extra.aiActive = this.traffic.count;
+    this.debug.extra.aiPhysics = this.traffic.physicsCount;
+    this.debug.extra.aiLights = this.traffic.lights.count;
+    this.debug.extra.aiRescues = this.traffic.rescueCount;
     this.debug.extra.chunksLoaded = this.world.loadedCount;
     this.debug.extra.chunkQueue = this.world.queueCount;
     this.debug.extra.position = `${position.x.toFixed(0)}, ${position.z.toFixed(0)}`;
@@ -329,6 +358,7 @@ export class Game {
     this.props?.dispose();
     this.landmarks?.dispose();
     this.roadDebug?.dispose();
+    this.traffic?.dispose();
     this.minimap?.dispose();
   }
 }

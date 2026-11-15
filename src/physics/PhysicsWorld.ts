@@ -14,15 +14,30 @@ export const GROUP = {
   VEHICLE: 0x0002,
   /** Static scenery that only the player should collide with. */
   PROP: 0x0004,
+  /** The AI traffic. */
+  TRAFFIC: 0x0008,
 } as const;
 
 /** Interaction group for the static world. */
 export const WORLD_GROUPS =
-  (GROUP.WORLD << 16) | (GROUP.WORLD | GROUP.VEHICLE | GROUP.PROP);
+  (GROUP.WORLD << 16) | (GROUP.WORLD | GROUP.VEHICLE | GROUP.PROP | GROUP.TRAFFIC);
 
-/** Interaction group for vehicles: they hit the world and each other. */
+/**
+ * Interaction group for the player and the race rivals: they hit the
+ * world, the traffic and each other.
+ */
 export const VEHICLE_GROUPS =
-  (GROUP.VEHICLE << 16) | (GROUP.WORLD | GROUP.VEHICLE | GROUP.PROP);
+  (GROUP.VEHICLE << 16) |
+  (GROUP.WORLD | GROUP.VEHICLE | GROUP.PROP | GROUP.TRAFFIC);
+
+/**
+ * Interaction group for the AI traffic.
+ *
+ * The traffic cars do not collide with each other - they would wedge
+ * themselves in the junctions - but they hit the world and the player.
+ */
+export const TRAFFIC_GROUPS =
+  (GROUP.TRAFFIC << 16) | (GROUP.WORLD | GROUP.VEHICLE | GROUP.PROP);
 
 /** Wheel ray-casts only look at the static world. */
 export const WHEEL_RAY_GROUPS = (GROUP.VEHICLE << 16) | GROUP.WORLD;

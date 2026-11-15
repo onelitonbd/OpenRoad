@@ -93,7 +93,20 @@ export class Vehicle {
   /** Multiplier applied to the tyre grip (rain makes the roads slippery). */
   gripMultiplier = 1;
 
-  constructor(physics: PhysicsWorld, config: VehicleConfig, mesh: THREE.Group) {
+  /**
+   * When false the gearbox never engages the reverse gear.
+   *
+   * The AI cars brake a lot (for red lights and for the car in front) and
+   * would otherwise roll backwards, so they keep the forward gear.
+   */
+  allowReverse = true;
+
+  constructor(
+    physics: PhysicsWorld,
+    config: VehicleConfig,
+    mesh: THREE.Group,
+    collisionGroups = VEHICLE_GROUPS,
+  ) {
     this.config = config;
     this.tuning = defaultTuning(config);
     this.object = mesh;
@@ -130,7 +143,7 @@ export class Vehicle {
         { x: inertiaX, y: inertiaY, z: inertiaZ },
         { x: 0, y: 0, z: 0, w: 1 },
       )
-      .setCollisionGroups(VEHICLE_GROUPS);
+      .setCollisionGroups(collisionGroups);
     this.collider = physics.world.createCollider(colliderDesc, this.body);
 
     this.controller = physics.world.createVehicleController(this.body);
@@ -221,6 +234,21 @@ export class Vehicle {
     return this.slipAmount;
   }
 
+  /** The throttle the controller asked for (0..1). */
+  get inputThrottle(): number {
+    return this.throttle;
+  }
+
+  /** The brake the controller asked for (0..1). */
+  get inputBrake(): number {
+    return this.brake;
+  }
+
+  /** The steering the controller asked for (-1..1). */
+  get inputSteer(): number {
+    return this.steerInput;
+  }
+
   /** The height of the car body above the ground (the ride height). */
   get rideHeight(): number {
     return this.config.groundClearance;
@@ -256,9 +284,13 @@ export class Vehicle {
 
     // --- gearbox / reverse ---
     const nearlyStopped = Math.abs(this.forwardSpeedValue) < 0.8;
-    if (nearlyStopped && this.brake > 0.05 && this.throttle < 0.05) {
-      this.gear = -1;
-    } else if (this.gear === -1 && (this.throttle > 0.05 || !nearlyStopped)) {
+    if (this.allowReverse) {
+      if (nearlyStopped && this.brake > 0.05 && this.throttle < 0.05) {
+        this.gear = -1;
+      } else if (this.gear === -1 && (this.throttle > 0.05 || !nearlyStopped)) {
+        this.gear = 1;
+      }
+    } else if (this.gear < 0) {
       this.gear = 1;
     }
     const reversing = this.gear < 0;

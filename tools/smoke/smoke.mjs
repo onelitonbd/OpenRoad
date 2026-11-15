@@ -78,7 +78,7 @@ console.log('--- debug overlay ---');
 console.log(debugText);
 
 mkdirSync('tools/smoke', { recursive: true });
-await page.screenshot({ path: shot });
+await page.screenshot({ path: shot, timeout: 180000 });
 console.log(`screenshot: ${shot}`);
 
 await browser.close();

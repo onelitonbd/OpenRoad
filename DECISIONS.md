@@ -196,3 +196,68 @@ of those show up in a unit test.
 There used to be two cameras: one in the renderer and one in the camera rig.
 Only the renderer one was used for the picture, so the car was never in
 view. The rig now configures the camera of the renderer.
+
+---
+
+## Phase 5 - AI traffic
+
+### The lane paths are resampled at four metres
+The centre line of a road is a coarse polyline - a short street can have
+only three points over 27 m. The pure pursuit controller aims at a point a
+few metres ahead on the lane, so a coarse lane made the AI cars steer in
+the wrong direction and drive off the road. `getLanePath()` now resamples
+the lane in even four metre steps (and caches the result).
+
+### The lanes of the opposite direction run from `b` to `a`
+The first version built the reversed lane in the same order as the normal
+one, so the distance along the lane did not match the direction of travel.
+The cars drove backwards on half of the roads. The lane points are now
+built in the direction of travel.
+
+### The steering sign is the opposite of the heading error
+The heading of a car is `atan2(x, z)`, so a **bigger** heading means a turn
+to the **left**. The pure pursuit error therefore has to be negated, and
+the lateral offset (the distance to the lane, measured to the right) is
+added. Getting this wrong is invisible in the code and very visible in the
+game: the cars steered away from their lane.
+
+### The AI cars never engage the reverse gear
+The `Vehicle` class uses the brake key to reverse when the car is nearly
+stopped. The AI cars brake a lot (for red lights and for the car in
+front), so they rolled backwards. `Vehicle.allowReverse` is `false` for the
+traffic.
+
+### The traffic has its own collision group
+The AI cars got wedged into each other in the junctions and piled up. They
+now use their own collision group (`GROUP.TRAFFIC`): they hit the world and
+the player, but not each other. The traffic still keeps its distance to the
+other cars - that is done by the AI, not by the physics.
+
+### A car that is stuck is put back on its lane
+If a car wants to drive but does not move (and neither waits for a light
+nor queues up behind another car), it has been rammed or wedged. After six
+seconds it is rebuilt at a free place on its lane. Rebuilding the vehicle
+is safer than moving the running one: a body that is teleported makes the
+suspension explode.
+
+### A car only drives with physics when the ground is ready
+Switching a car from the cheap movement to the full physics makes it a
+dynamic body. If the chunk below it is still streaming in, there is no
+collider and the car falls through the world. The traffic manager asks the
+chunk manager whether the ground is ready before it switches.
+
+### The traffic lights are instanced
+There are over a hundred junctions with a light in the city. As separate
+meshes they cost about 150 draw calls; as two instanced meshes (the poles
+and the lamps) they cost two. The lamps use a per instance colour, so they
+can change their colour without a new draw call.
+
+### The pole stands in the corner of the junction
+The first version put the pole on the centre line of the junction - the
+cars drove through it. The pole now searches for the closest spot that is
+at least 1.3 m away from the kerb of every road around the junction.
+
+### Ten minutes of traffic are part of the test suite
+`tools/traffic-test.ts` simulates ten minutes of traffic and checks that the
+cars stay on the roads, do not fall through the world, do not get stuck and
+keep moving. The head-less test found every one of the bugs above.

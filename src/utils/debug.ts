@@ -11,6 +11,8 @@ export interface DebugExtra {
   chunkQueue?: number;
   aiActive?: number;
   aiPhysics?: number;
+  aiRescues?: number;
+  aiLights?: number;
   position?: string;
   fps?: number;
 }
@@ -77,6 +79,12 @@ export class DebugOverlay {
     }
     if (this.extra.aiActive !== undefined) {
       lines.push(`ai ${this.extra.aiActive} active / ${this.extra.aiPhysics ?? 0} physics`);
+    }
+    if (this.extra.aiLights !== undefined) {
+      lines.push(`traffic lights ${this.extra.aiLights}`);
+    }
+    if (this.extra.aiRescues !== undefined && this.extra.aiRescues > 0) {
+      lines.push(`ai rescues ${this.extra.aiRescues}`);
     }
     if (this.extra.position) {
       lines.push(`pos ${this.extra.position}`);

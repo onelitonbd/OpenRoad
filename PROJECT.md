@@ -481,7 +481,7 @@ Techniques the agent must use: instancing, chunk streaming in Web Workers, geome
 - [x] Phase 2 Terrain & chunks - seeded terrain, regions, worker streaming, water, fog
 - [x] Phase 3 Roads - road graph, terrain flattening, road ribbons, junctions, spatial index
 - [x] Phase 4 Buildings & regions - instanced buildings and props, landmarks, minimap
-- [ ] Phase 5 AI traffic
+- [x] Phase 5 AI traffic - lane following, traffic lights, priority rules, physics swap
 - [ ] Phase 6 Sky, day/night, weather
 - [ ] Phase 7 Garage, menus, saves, audio
 - [ ] Phase 8 Rival racing

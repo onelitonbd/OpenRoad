@@ -143,6 +143,19 @@ export class Minimap {
     return this.rotating;
   }
 
+  /**
+   * The AI cars that are shown on the map.
+   *
+   * They are drawn as small dots, so the player can see where the traffic
+   * is before they drive into it.
+   */
+  private traffic: { x: number; z: number }[] = [];
+
+  /** Set the AI cars that are drawn on the map. */
+  setTraffic(cars: { x: number; z: number }[]): void {
+    this.traffic = cars;
+  }
+
   /** Move the minimap to the player. */
   update(playerX: number, playerZ: number, heading: number): void {
     const ctx = this.context;
@@ -179,6 +192,16 @@ export class Minimap {
       this.worldSize,
     );
     void worldScale;
+
+    // The AI cars.
+    if (this.traffic.length > 0) {
+      ctx.fillStyle = '#7fd4ff';
+      for (const car of this.traffic) {
+        ctx.beginPath();
+        ctx.arc(car.x, car.z, 9, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
     ctx.restore();
 
     // The border of the minimap.

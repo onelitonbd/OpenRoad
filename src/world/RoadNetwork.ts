@@ -46,7 +46,39 @@ export interface RoadHit {
   t: number;
 }
 
+/**
+ * One point of a lane.
+ *
+ * A lane is a polyline that runs along one side of the road. The traffic
+ * uses it to know where to drive.
+ */
+export interface LanePoint {
+  x: number;
+  y: number;
+  z: number;
+  /** The direction of travel in radians (the same as the car heading). */
+  heading: number;
+  /** The distance from the start of the lane in metres. */
+  distance: number;
+}
+
+export interface LanePath {
+  edgeId: number;
+  /** The lane inside the edge (0 is the right hand lane of a -> b). */
+  lane: number;
+  /** True when the lane runs from b to a (the oncoming traffic). */
+  reversed: boolean;
+  points: LanePoint[];
+  /** The length of the lane in metres. */
+  length: number;
+  /** The speed limit of the road in km/h. */
+  speed: number;
+}
+
 /** Road widths and speed limits per type. */
+/** The distance between two points of a lane (in metres). */
+const LANE_STEP = 4;
+
 const ROAD_SPECS: Record<RoadType, { lanes: number; speed: number; width: number }> = {
   highway: { lanes: 2, speed: 110, width: 17 },
   avenue: { lanes: 2, speed: 60, width: 14 },
@@ -115,6 +147,9 @@ export class RoadNetwork {
   /** Spatial index for the road geometry. */
   private flattener: RoadFlattener | null = null;
 
+  /** The lane paths (they never change, so they are cached). */
+  private readonly laneCache = new Map<string, LanePath>();
+
   /** The terrain the network was built on (used for the road heights). */
   private terrain: Terrain | null = null;
 
@@ -127,6 +162,7 @@ export class RoadNetwork {
   build(seed: number, terrain: Terrain): void {
     this.nodes.length = 0;
     this.edges.length = 0;
+    this.laneCache.clear();
     this.terrain = terrain;
 
     const rng = new Rng(seed ^ 0x51ed270b);
@@ -575,32 +611,152 @@ export class RoadNetwork {
   }
 
   /**
-   * The centre line of one lane of a road.
-   * `lane` 0 is the right hand lane, 1 the next one and so on.
+   * The path of one lane of a road.
+   *
+   * `lane` 0 is the right hand lane when driving from a to b, `lane` 1 the
+   * next one and so on. The lanes behind `edge.lanes` belong to the opposite
+   * direction and run from b to a.
    */
-  lanePath(edgeId: number, lane: number): number[] {
+  getLanePath(edgeId: number, lane: number): LanePath | null {
     const edge = this.edges[edgeId];
-    if (!edge) return [];
-    const laneWidth = 3.6;
-    const offset = laneWidth * (lane + 0.5);
-    const halfWidth = edge.width / 2;
-    const out: number[] = [];
+    if (!edge) return null;
 
-    for (let i = 0; i < edge.points.length / 2; i++) {
-      const x = edge.points[i * 2];
-      const z = edge.points[i * 2 + 1];
-      const prev = Math.max(0, i - 1);
-      const next = Math.min(edge.points.length / 2 - 1, i + 1);
-      const dx = edge.points[next * 2] - edge.points[prev * 2];
-      const dz = edge.points[next * 2 + 1] - edge.points[prev * 2 + 1];
-      const len = Math.hypot(dx, dz) || 1;
-      // The right hand normal (the road runs along +direction).
-      const nx = dz / len;
-      const nz = -dx / len;
-      const shift = Math.min(offset, Math.max(0, halfWidth - 1.2));
-      out.push(x + nx * shift, z + nz * shift);
+    // The lane paths never change, so they are cached.
+    const key = `${edgeId}:${lane}`;
+    const cached = this.laneCache.get(key);
+    if (cached) return cached;
+
+    const lanesPerSide = Math.max(1, edge.lanes);
+    const reversed = lane >= lanesPerSide;
+    const index = reversed ? lane - lanesPerSide : lane;
+    const laneWidth = edge.width / 2 / lanesPerSide;
+    // The distance of the lane centre from the middle of the road.
+    const offset = edge.width / 2 - (index + 0.5) * laneWidth;
+
+    const count = edge.points.length / 2;
+    if (count < 2) return null;
+
+    // --- the centre line of the road, with the distance along it ---
+    const centreX: number[] = [];
+    const centreZ: number[] = [];
+    const centreY: number[] = [];
+    const centreDistance: number[] = [0];
+    for (let i = 0; i < count; i++) {
+      centreX.push(edge.points[i * 2]);
+      centreZ.push(edge.points[i * 2 + 1]);
+      centreY.push(edge.heights[i]);
+      if (i > 0) {
+        centreDistance.push(
+          centreDistance[i - 1] +
+            Math.hypot(centreX[i] - centreX[i - 1], centreZ[i] - centreZ[i - 1]),
+        );
+      }
     }
-    return out;
+    const total = centreDistance[count - 1];
+
+    // --- resample the centre line in even steps ---
+    // The centre line of the road can be very coarse (a short street only
+    // has a few points), so the lane is resampled. Without this the AI cars
+    // would steer in the wrong direction on the short roads.
+    const steps = Math.max(1, Math.round(total / LANE_STEP));
+    const sampleX: number[] = [];
+    const sampleZ: number[] = [];
+    const sampleY: number[] = [];
+    const sampleDX: number[] = [];
+    const sampleDZ: number[] = [];
+    let segment = 0;
+
+    for (let s = 0; s <= steps; s++) {
+      const distance = (s / steps) * total;
+      // Find the segment this distance belongs to.
+      while (segment < count - 2 && centreDistance[segment + 1] < distance) {
+        segment++;
+      }
+      const d0 = centreDistance[segment];
+      const d1 = centreDistance[segment + 1];
+      const t = d1 - d0 > 1e-6 ? (distance - d0) / (d1 - d0) : 0;
+      sampleX.push(centreX[segment] + (centreX[segment + 1] - centreX[segment]) * t);
+      sampleZ.push(centreZ[segment] + (centreZ[segment + 1] - centreZ[segment]) * t);
+      sampleY.push(centreY[segment] + (centreY[segment + 1] - centreY[segment]) * t);
+
+      // The direction of the road (the tangent of the centre line).
+      let dx = centreX[segment + 1] - centreX[segment];
+      let dz = centreZ[segment + 1] - centreZ[segment];
+      const len = Math.hypot(dx, dz) || 1;
+      sampleDX.push(dx / len);
+      sampleDZ.push(dz / len);
+    }
+
+    // The lanes of the other direction drive from b to a, so their points
+    // are in the opposite order.
+    const order = reversed ? sampleX.length - 1 : 0;
+    const step = reversed ? -1 : 1;
+
+    const points: LanePoint[] = [];
+    for (let i = 0; i < sampleX.length; i++) {
+      const index0 = order + step * i;
+      // The direction of travel.
+      const dx = sampleDX[index0] * step;
+      const dz = sampleDZ[index0] * step;
+      // The right hand side of the driving direction.
+      const nx = dz;
+      const nz = -dx;
+
+      points.push({
+        x: sampleX[index0] + nx * offset,
+        y: sampleY[index0],
+        z: sampleZ[index0] + nz * offset,
+        // The heading of the car: 0 points to +Z.
+        heading: Math.atan2(dx, dz),
+        distance: (i / steps) * total,
+      });
+    }
+
+    // The heading of the first and the last point is taken from the
+    // neighbour, so the car does not turn sharply at the end of the road.
+    for (let i = 0; i < points.length; i++) {
+      const prev = Math.max(0, i - 1);
+      const next = Math.min(points.length - 1, i + 1);
+      const dx = points[next].x - points[prev].x;
+      const dz = points[next].z - points[prev].z;
+      if (Math.hypot(dx, dz) > 1e-6) {
+        points[i].heading = Math.atan2(dx, dz);
+      }
+    }
+
+    const path: LanePath = {
+      edgeId,
+      lane: index,
+      reversed,
+      points,
+      length: total,
+      speed: edge.speed,
+    };
+    this.laneCache.set(key, path);
+    return path;
+  }
+
+  /** All the roads that start or end at a node. */
+  edgesAtNode(nodeId: number): RoadEdge[] {
+    const result: RoadEdge[] = [];
+    for (const edge of this.edges) {
+      if (edge.a === nodeId || edge.b === nodeId) result.push(edge);
+    }
+    return result;
+  }
+
+  /** The node at the end of an edge (the one the car drives towards). */
+  endNode(edgeId: number, reversed: boolean): number {
+    const edge = this.edges[edgeId];
+    if (!edge) return -1;
+    return reversed ? edge.a : edge.b;
+  }
+
+  /** The start node of an edge for a driving direction. */
+  startNode(edgeId: number, reversed: boolean): number {
+    const edge = this.edges[edgeId];
+    if (!edge) return -1;
+    return reversed ? edge.b : edge.a;
   }
 
   /** The height of the road at a given point of its centre line. */

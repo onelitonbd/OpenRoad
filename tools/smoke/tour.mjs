@@ -62,7 +62,7 @@ for (const place of places) {
   }, place);
   await page.waitForTimeout(500);
 
-  await page.screenshot({ path: `tools/smoke/shots/${place.name}.png` });
+  await page.screenshot({ path: `tools/smoke/shots/${place.name}.png`, timeout: 180000 });
   const info = await page.evaluate(() => {
     const g = window.openRoad;
     const p = g.vehicle.body.translation();

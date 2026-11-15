@@ -6,10 +6,10 @@ A browser based 3D open world arcade driving game built with **Three.js**,
 Drive a car through a large procedurally generated world: downtown
 skyscrapers, suburbs, highways, countryside, mountains, desert and a coast.
 
-> Status: **Phases 0 - 4 complete.** The world streams in, the road network
-> connects every region, the city is filled with buildings and props and the
-> minimap shows the roads around you. Traffic, day/night and the menus are
-> still to come.
+> Status: **Phases 0 - 5 complete.** The world streams in, the road network
+> connects every region, the city is filled with buildings and props, the
+> minimap shows the roads around you and the traffic drives on the roads
+> next to you. Day/night, weather and the menus are still to come.
 
 ---
 
@@ -74,6 +74,27 @@ mast in the mountains). They are drawn on the minimap.
 Everything is generated from one seed (currently `1337`), so the world is
 the same every time you start the game.
 
+## The traffic
+
+The AI traffic spawns in a ring of 150 - 400 m around the player and is
+removed again when it is more than 520 m away. The number of cars depends
+on the quality preset (Low 15, Medium 30, High 50).
+
+Every car drives on a **lane** of the road network: it follows the lane,
+keeps to the right side, obeys the speed limit of the road, slows down
+before a sharp corner and keeps a distance to the car in front of it. At a
+junction in the city it waits for the traffic light, everywhere else the
+car with the priority goes first.
+
+The nearest ten cars are simulated with the full vehicle physics, so the
+player can hit them and they react to the hit. All the other cars only
+follow their lane, which is much cheaper. The switch happens without a
+visible jump.
+
+The traffic lights are drawn as poles at the kerb of the junctions. The
+poles and the lamps are instanced, so the whole city only costs a couple of
+draw calls. Press `F3` to see the lanes the AI cars drive on.
+
 ## Project layout
 
 See `PROJECT.md` for the full design document and `DECISIONS.md` for the
@@ -87,7 +108,7 @@ src/
   ui/         HUD, minimap, tuning panel, styles
   utils/      Math, seeded random, object pool, debug overlay
   world/      Terrain, regions, chunk streaming, roads, buildings, props
-  ai/         (Phase 5+) Traffic and race rivals
+  ai/         Traffic manager, AI cars and the traffic lights
   environment/(Phase 6+) Sky, day/night cycle, weather
   audio/      (Phase 7+) Engine and ambient sound
   save/       (Phase 7+) Local and cloud saves
@@ -104,6 +125,10 @@ npm run test:terrain   # ASCII map of the world and the region heights
 npm run test:roads     # the road graph: length, connectivity, flat roads
 npm run test:world     # drives the car over the generated terrain colliders
 npm run test:rapier    # the official Rapier vehicle example, for comparison
+
+npm run test:traffic         # ten minutes of AI traffic: no jams, no crashes
+npm run test:traffic-poles   # the traffic lights stand next to the road
+npm run test:traffic-player  # the player can hit an AI car and it reacts
 ```
 
 ### Head-less browser test
@@ -118,6 +143,9 @@ npm run build
 npm run preview &          # serves the build on http://127.0.0.1:4173
 npm run test:smoke         # loads the game, drives it, prints the stats
 npm run test:tour          # a screenshot of every region
+npm run test:traffic-shot  # a screenshot of the traffic on the road
+npm run test:light-shot    # a screenshot of a traffic light
+npm run test:debug-shot    # a screenshot of the F3 debug view
 ```
 
 This is how most of the bugs in the world were found - the camera pointed
@@ -131,8 +159,11 @@ Press `F3` for the debug overlay (FPS, draw calls, triangles, chunk count).
 
 The world is streamed in 256 m chunks. A chunk is generated in a Web Worker
 and turned into a mesh plus a Rapier collider on the main thread, with a
-budget of 4 ms per frame. Buildings and props are instanced, so a whole
-city block costs a handful of draw calls.
+budget of 4 ms per frame. Buildings, props and the traffic lights are
+instanced, so a whole city block costs a handful of draw calls.
+
+Only the ten AI cars closest to the player use the vehicle physics; the
+rest of the traffic is moved along the lane, which costs almost nothing.
 
 > The FPS numbers in the head-less test are not representative: the test
 > browser renders with the software rasteriser (SwiftShader), which is about
