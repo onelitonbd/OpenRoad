@@ -206,7 +206,11 @@ try {
     const renderer = game?.roadRenderer;
     const roads = game?.world?.roads;
     const position = game?.vehicle?.body?.translation?.();
-    if (!renderer || !roads || !position) return { near: 0, missing: 0, meshes: 0 };
+    if (!renderer || !roads || !position) return { near: 0, missing: -1, meshes: 0 };
+    // An older build does not have the method - then the check cannot run.
+    if (typeof renderer.hasMesh !== 'function') {
+      return { near: 0, missing: -1, meshes: renderer.meshCount ?? 0 };
+    }
     const near = roads.roadsInRadius(position.x, position.z, 150);
     const missing = near.filter((edge) => !renderer.hasMesh(edge.id)).length;
     return { near: near.length, missing, meshes: renderer.meshCount };
@@ -317,6 +321,7 @@ report.ok =
   report.gearbox.brakeGear > 0 &&
   report.gearbox.reverseGear < 0 &&
   !!report.roadMeshes &&
+  report.roadMeshes.missing >= 0 &&
   report.roadMeshes.missing === 0 &&
   !!mobile &&
   mobile.controlsVisible &&
