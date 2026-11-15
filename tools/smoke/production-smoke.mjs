@@ -89,6 +89,7 @@ const report = {
   stats: null,
   traffic: [],
   debugOverlay: null,
+  mobile: null,
 };
 
 try {
@@ -143,12 +144,70 @@ try {
   }
 } catch (error) {
   errors.push(`fatal: ${error instanceof Error ? error.message : String(error)}`);
+}
+
+// --- the same build on a phone ----------------------------------------------
+const MOBILE_UA =
+  'Mozilla/5.0 (Linux; Android 13; Pixel 7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36';
+
+try {
+  const context = await browser.newContext({
+    viewport: { width: 844, height: 390 },
+    isMobile: true,
+    hasTouch: true,
+    userAgent: MOBILE_UA,
+  });
+  const phone = await context.newPage();
+  phone.on('pageerror', (error) => errors.push(`mobile pageerror: ${error.message}`));
+
+  await phone.goto(url, { waitUntil: 'load', timeout: 120000 });
+  await phone.waitForFunction(() => window.__openroad?.ready === true, { timeout: 180000 });
+  await phone.waitForTimeout(3000);
+
+  const landscape = await phone.evaluate(() => {
+    const panel = document.querySelector('.touch-controls');
+    const buttons = [...document.querySelectorAll('.touch-btn')];
+    const rotate = document.querySelector('.rotate-overlay');
+    return {
+      controlsVisible: panel ? !panel.classList.contains('hidden') : false,
+      buttons: buttons.length,
+      hasFullscreen: buttons.some((b) => b.textContent.trim() === 'FULL'),
+      rotateVisible: rotate ? !rotate.classList.contains('hidden') : false,
+    };
+  });
+
+  // The phone held upright has to show the "turn your phone" screen.
+  const portraitContext = await browser.newContext({
+    viewport: { width: 390, height: 844 },
+    isMobile: true,
+    hasTouch: true,
+    userAgent: MOBILE_UA,
+  });
+  const portrait = await portraitContext.newPage();
+  await portrait.goto(url, { waitUntil: 'load', timeout: 120000 });
+  await portrait.waitForFunction(() => window.__openroad?.ready === true, { timeout: 180000 });
+  await portrait.waitForTimeout(2500);
+  const portraitRotate = await portrait.evaluate(() => {
+    const rotate = document.querySelector('.rotate-overlay');
+    return rotate ? !rotate.classList.contains('hidden') : false;
+  });
+
+  report.mobile = {
+    controlsVisible: landscape.controlsVisible,
+    buttons: landscape.buttons,
+    hasFullscreen: landscape.hasFullscreen,
+    rotateVisibleInPortrait: portraitRotate,
+    rotateVisibleInLandscape: landscape.rotateVisible,
+  };
+} catch (error) {
+  errors.push(`mobile: ${error instanceof Error ? error.message : String(error)}`);
 } finally {
   await browser.close();
 }
 
 const last = report.traffic[report.traffic.length - 1] ?? null;
 const anyMoving = report.traffic.some((sample) => sample.moving > 0);
+const mobile = report.mobile;
 
 report.ok =
   errors.length === 0 &&
@@ -158,7 +217,12 @@ report.ok =
   last.cars > 0 &&
   last.physics > 0 &&
   anyMoving &&
-  last.below === 0;
+  last.below === 0 &&
+  !!mobile &&
+  mobile.controlsVisible &&
+  mobile.hasFullscreen &&
+  mobile.rotateVisibleInPortrait &&
+  !mobile.rotateVisibleInLandscape;
 
 if (reportPath) {
   mkdirSync(dirname(reportPath), { recursive: true });
@@ -180,6 +244,7 @@ if (process.env.GITHUB_STEP_SUMMARY) {
     `- FPS: ${report.stats?.fps ?? 'n/a'}`,
     `- Chunks: ${report.stats?.chunksLoaded ?? 'n/a'} loaded / ${report.stats?.chunkQueue ?? 'n/a'} queued`,
     `- Traffic: ${last ? `${last.cars} cars, ${last.physics} with physics, ${last.moving} moving` : 'n/a'}`,
+    `- Phone: ${mobile ? `${mobile.buttons} touch buttons, full screen ${mobile.hasFullscreen ? 'yes' : 'no'}, "turn your phone" in portrait: ${mobile.rotateVisibleInPortrait ? 'yes' : 'no'}` : 'n/a'}`,
     '',
     '```',
     report.debugOverlay ?? 'no debug overlay',

@@ -66,7 +66,7 @@ await page.waitForTimeout(1500);
 
 const stats = await page.evaluate(() => window.__openroad?.stats?.() ?? null);
 const debugText = await page.evaluate(() => {
-  const el = document.querySelector('#debug');
+  const el = document.querySelector('#debug') ?? document.querySelector('.debug-overlay');
   return el ? el.textContent : null;
 });
 

@@ -99,6 +99,20 @@ export class TrafficManager {
   /** The cars that honked at the player (the cooldown is per car). */
   private readonly honkTimes = new Map<TrafficCar, number>();
 
+  /**
+   * The player honked. The drivers around them answer - a car that is stuck
+   * behind the player honks back after a moment.
+   */
+  playerHorn(playerX: number, playerZ: number): void {
+    for (const car of this.cars) {
+      const position = car.position;
+      const distance = Math.hypot(position.x - playerX, position.z - playerZ);
+      if (distance > 30) continue;
+      // Start the horn timer again, so the car answers right away.
+      this.honkTimes.delete(car);
+    }
+  }
+
   /** How many cars use the full physics. */
   get physicsCount(): number {
     return this.cars.filter((car) => car.physicsMode).length;

@@ -51,21 +51,43 @@ test below.
 
 | Action | Keyboard | Touch |
 |---|---|---|
-| Throttle | `W` / `Up` | Pedal button |
-| Brake / reverse | `S` / `Down` | Pedal button |
-| Steer | `A` `D` / `Left` `Right` | Arrow buttons |
-| Handbrake (drift) | `Space` | Button |
-| Change camera | `C` | Button |
-| Reset car | `R` | Button |
-| Headlights | `L` | Button |
-| Horn | `H` | Button |
-| Pause | `Esc` | Button |
+| Throttle | `W` / `Up` | **GAS** pedal |
+| Brake / reverse | `S` / `Down` | **BRAKE** pedal |
+| Steer | `A` `D` / `Left` `Right` | **◀ ▶** buttons or drag on the left half |
+| Handbrake (drift) | `Space` | **HAND BRAKE** |
+| Change camera | `C` | **CAM** |
+| Headlights | `L` | **LGT** |
+| Horn | `H` | **HORN** |
+| Reset car | `R` | **RST** |
+| Pause | `Esc` | **II** |
+| Full screen | - | **FULL** |
 | Photo mode | `P` | Menu |
 | Debug overlay | `F3` | - |
 | Handling tuning panel | `T` | - |
 | Minimap north-up / rotating | `M` | - |
 
 Cameras: chase (default), far chase, hood and cockpit.
+
+## On a phone
+
+The game detects a phone or a tablet and then shows the on-screen controls:
+big pedals in the bottom right corner, the steering buttons and a drag
+area in the bottom left corner and the small buttons (camera, lights,
+horn, reset, pause, full screen) in the top left corner. The keyboard
+hint disappears, because it is useless on a phone.
+
+The game is played in **landscape**:
+
+- The **FULL** button puts the page into the full screen mode and asks the
+  browser to lock the screen to landscape. That works on Android.
+- iOS has no full screen and no orientation lock for web pages, so the
+  phone has to be turned by hand. While the phone is held upright a
+  "Turn your phone" screen covers the game and the simulation waits.
+- Every button uses pointer events with a pointer capture, so the gas
+  pedal stays pressed when the thumb slides and the car can be steered
+  and accelerated at the same time.
+
+
 
 ## The world
 
@@ -141,6 +163,7 @@ npm run test:rapier    # the official Rapier vehicle example, for comparison
 npm run test:traffic         # ten minutes of AI traffic: no jams, no crashes
 npm run test:traffic-poles   # the traffic lights stand next to the road
 npm run test:traffic-player  # the player can hit an AI car and it reacts
+npm run test:mobile          # the touch controls on a phone in landscape
 ```
 
 ### Head-less browser test
@@ -158,6 +181,7 @@ npm run test:tour          # a screenshot of every region
 npm run test:traffic-shot  # a screenshot of the traffic on the road
 npm run test:light-shot    # a screenshot of a traffic light
 npm run test:debug-shot    # a screenshot of the F3 debug view
+npm run test:mobile        # the touch controls, as an Android phone
 ```
 
 This is how most of the bugs in the world were found - the camera pointed

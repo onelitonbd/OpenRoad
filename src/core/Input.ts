@@ -54,9 +54,14 @@ export class Input {
   private pressed = new Set<ActionName>();
   /** Touch overrides - the on-screen buttons set these directly. */
   private touch = new Set<ActionName>();
+  /** Steering from the touch screen (-1 .. 1), null when there is none. */
+  private analogSteer: number | null = null;
 
   /** True when the player used a touch screen (shows the touch UI). */
   isTouchDevice = false;
+
+  /** Called the first time the player touches the screen. */
+  onTouchDetected: (() => void) | null = null;
 
   private onKeyDown = (e: KeyboardEvent): void => {
     const action = KEY_MAP[e.code];
@@ -112,6 +117,7 @@ export class Input {
   private onBlur = (): void => {
     this.held.clear();
     this.touch.clear();
+    this.analogSteer = null;
   };
 
   constructor() {
@@ -121,7 +127,9 @@ export class Input {
     window.addEventListener(
       'touchstart',
       () => {
+        if (this.isTouchDevice) return;
         this.isTouchDevice = true;
+        this.onTouchDetected?.();
       },
       { once: true, passive: true },
     );
@@ -147,6 +155,14 @@ export class Input {
     }
   }
 
+  /**
+   * The steering of the touch screen (-1 = left, 1 = right).
+   * `null` means the finger is not on the screen.
+   */
+  setAnalogSteer(value: number | null): void {
+    this.analogSteer = value === null ? null : Math.max(-1, Math.min(1, value));
+  }
+
   /** Called once per frame after the game has read the pressed actions. */
   endFrame(): void {
     this.pressed.clear();
@@ -161,7 +177,13 @@ export class Input {
     const right = this.isDown('right') ? 1 : 0;
     this.state.throttle = forward;
     this.state.brake = back;
-    this.state.steer = right - left;
+    // The touch screen steers with an analogue value, the keyboard with
+    // two buttons - they can be mixed.
+    const digital = right - left;
+    this.state.steer =
+      this.analogSteer === null
+        ? digital
+        : Math.max(-1, Math.min(1, this.analogSteer + digital));
     this.state.handbrake = this.isDown('handbrake');
   }
 

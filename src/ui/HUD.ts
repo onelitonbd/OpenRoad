@@ -20,6 +20,7 @@ export class HUD {
   private gearEl!: HTMLDivElement;
   private rpmFill!: HTMLDivElement;
   private toastEl!: HTMLDivElement;
+  private hintEl!: HTMLDivElement;
   private toastTimer = 0;
 
   constructor(parent: HTMLElement) {
@@ -60,6 +61,7 @@ export class HUD {
     hint.className = 'hud-hint';
     hint.innerHTML =
       'W/S throttle &amp; brake &middot; A/D steer &middot; SPACE handbrake<br />C camera &middot; R reset &middot; L lights &middot; H horn &middot; F3 debug';
+    this.hintEl = hint;
     this.root.appendChild(hint);
 
     // --- toast messages ---
@@ -91,6 +93,14 @@ export class HUD {
     this.toastEl.textContent = message;
     this.toastEl.classList.add('show');
     this.toastTimer = duration;
+  }
+
+  /**
+   * The keyboard hint is useless on a phone, where the buttons are on the
+   * screen instead.
+   */
+  setKeyboardHintVisible(visible: boolean): void {
+    this.hintEl.classList.toggle('hidden', !visible);
   }
 
   updateTimers(dt: number): void {

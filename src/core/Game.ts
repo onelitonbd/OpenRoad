@@ -7,6 +7,9 @@ import { RoadGraphDebug } from '../utils/roadDebug';
 import { HUD } from '../ui/HUD';
 import { Minimap } from '../ui/Minimap';
 import { TuningPanel } from '../ui/TuningPanel';
+import { TouchControls } from '../ui/TouchControls';
+import { RotateOverlay } from '../ui/RotateOverlay';
+import { isMobileDevice, lockLandscape, requestFullscreen } from './Mobile';
 import { PhysicsWorld } from '../physics/PhysicsWorld';
 import { Vehicle } from '../vehicles/Vehicle';
 import { PlayerController } from '../vehicles/PlayerController';
@@ -66,6 +69,15 @@ export class Game {
   traffic!: TrafficManager;
   /** Draws the road graph when the debug overlay is open. */
   private roadDebug!: RoadGraphDebug;
+  /** The on-screen controls (phones and tablets only). */
+  private touchControls: TouchControls | null = null;
+  /** The "turn your phone" screen (phones and tablets only). */
+  private rotateOverlay: RotateOverlay | null = null;
+  /** The meshes of the head lights of the player car. */
+  private headlightMeshes: THREE.Mesh[] = [];
+  private headlightsOn = false;
+  /** The pause screen, created the first time the game is paused. */
+  private pauseOverlay: HTMLDivElement | null = null;
 
   private readonly uiRoot: HTMLElement;
   private readonly time = new FixedTimeStep(60, 5);
@@ -164,6 +176,101 @@ export class Game {
     this.cameraRig.snapTo(this.vehicle);
 
     this.tuningPanel.attach(this.vehicle);
+
+    // The head lights of the player car can be switched on and off.
+    this.headlightMeshes = mesh.lights;
+
+    // The phone and tablet controls.
+    this.setupMobileUI();
+  }
+
+  /**
+   * Phones and tablets get the on-screen controls and the "turn your
+   * phone" screen. A device that only becomes a touch device later (a
+   * laptop with a screen) gets the controls as soon as it is touched.
+   */
+  private setupMobileUI(): void {
+    this.rotateOverlay = new RotateOverlay(this.uiRoot);
+
+    this.input.onTouchDetected = () => this.enableTouchControls();
+
+    if (isMobileDevice()) this.enableTouchControls();
+  }
+
+  /** Build the on-screen controls (once). */
+  private enableTouchControls(): void {
+    if (this.touchControls) return;
+    this.touchControls = new TouchControls(this.uiRoot, {
+      input: this.input,
+      onFullscreen: () => {
+        void this.enterFullscreen();
+      },
+      onPause: () => this.togglePause(),
+    });
+    document.body.classList.add('touch-mode');
+    this.hud.setKeyboardHintVisible(false);
+
+    // The full screen gives a much bigger picture - mention it once.
+    if (!localStorage.getItem('openroad.touchHint')) {
+      localStorage.setItem('openroad.touchHint', '1');
+      this.hud.showToast('Tap FULL for the full screen', 3.5);
+    }
+  }
+
+  /**
+   * Go into the full screen and lock the phone to landscape.
+   * Android can do both, iOS only the first one - there the player has to
+   * turn the phone by hand.
+   */
+  private async enterFullscreen(): Promise<void> {
+    const ok = await requestFullscreen(document.documentElement);
+    if (!ok) {
+      this.hud.showToast('No full screen here - turn the phone sideways', 2.5);
+      return;
+    }
+    const locked = await lockLandscape();
+    this.hud.showToast(locked ? 'Full screen - locked to landscape' : 'Full screen', 2);
+  }
+
+  /** Pause the game and show the pause screen. */
+  private togglePause(): void {
+    if (this.state === 'play') {
+      this.state = 'paused';
+      this.showPauseOverlay();
+      return;
+    }
+    if (this.state === 'paused') {
+      this.state = 'play';
+      this.pauseOverlay?.classList.add('hidden');
+    }
+  }
+
+  private showPauseOverlay(): void {
+    if (!this.pauseOverlay) {
+      const overlay = document.createElement('div');
+      overlay.className = 'screen';
+
+      const card = document.createElement('div');
+      card.className = 'menu-card panel';
+
+      const title = document.createElement('div');
+      title.className = 'menu-title';
+      title.textContent = 'PAUSED';
+
+      const buttons = document.createElement('div');
+      buttons.className = 'menu-buttons';
+      const resume = document.createElement('button');
+      resume.className = 'btn';
+      resume.textContent = 'Resume';
+      resume.addEventListener('click', () => this.togglePause());
+      buttons.appendChild(resume);
+
+      card.append(title, buttons);
+      overlay.appendChild(card);
+      this.uiRoot.appendChild(overlay);
+      this.pauseOverlay = overlay;
+    }
+    this.pauseOverlay.classList.remove('hidden');
   }
 
   /**
@@ -227,7 +334,9 @@ export class Game {
 
     this.handleHotkeys();
 
-    if (this.state === 'play') {
+    // While the phone is held upright the game waits - the player cannot
+    // see anything anyway.
+    if (this.state === 'play' && !this.rotateOverlay?.isVisible) {
       this.time.update(frameDelta, (dt) => this.fixedUpdate(dt));
     } else {
       this.time.reset();
@@ -249,6 +358,7 @@ export class Game {
       this.traffic.setDebugVisible(this.debug.isVisible);
     }
     if (this.input.wasPressed('tuning')) this.tuningPanel.toggle();
+    if (this.input.wasPressed('pause')) this.togglePause();
 
     if (this.state !== 'play') return;
 
@@ -261,6 +371,25 @@ export class Game {
       this.hud.showToast(rotating ? 'Minimap: rotating' : 'Minimap: north up');
     }
     if (this.input.wasPressed('reset')) this.resetCar();
+    if (this.input.wasPressed('horn')) this.honk();
+    if (this.input.wasPressed('headlights')) this.toggleHeadlights();
+  }
+
+  /** The player honks: the drivers around them answer. */
+  private honk(): void {
+    const position = this.vehicle.body.translation();
+    this.hud.showToast('You honk!', 1.2);
+    this.traffic.playerHorn(position.x, position.z);
+  }
+
+  /** Switch the head lights of the player car on and off. */
+  private toggleHeadlights(): void {
+    this.headlightsOn = !this.headlightsOn;
+    for (const mesh of this.headlightMeshes) {
+      const material = mesh.material as THREE.MeshLambertMaterial;
+      material.emissive.setHex(this.headlightsOn ? 0xffe9a8 : 0x000000);
+    }
+    this.hud.showToast(this.headlightsOn ? 'Head lights on' : 'Head lights off', 1.2);
   }
 
   /** One fixed physics step. */
@@ -291,6 +420,9 @@ export class Game {
 
   /** Everything that runs once per rendered frame. */
   private renderUpdate(dt: number): void {
+    // The phone may have been turned since the last frame.
+    this.rotateOverlay?.update();
+
     const position = this.vehicle.body.translation();
 
     // Stream the terrain, the roads, the buildings and the props.
@@ -351,6 +483,8 @@ export class Game {
     this.input.dispose();
     this.renderer.dispose();
     this.hud.dispose();
+    this.touchControls?.dispose();
+    this.rotateOverlay?.dispose();
     this.world?.dispose();
     this.water?.dispose();
     this.roadRenderer?.dispose();

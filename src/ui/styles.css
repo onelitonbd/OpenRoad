@@ -542,17 +542,61 @@ body {
   pointer-events: none;
 }
 
-/* ---------- touch controls ---------- */
+/* ---------- touch controls (phones and tablets) ---------- */
+
+/* The panel itself never catches a click - only its buttons do. */
+#ui-root > .touch-controls {
+  pointer-events: none;
+}
 
 .touch-controls {
   position: absolute;
   inset: 0;
   pointer-events: none;
   z-index: 15;
+  font-family: var(--ui-font);
+}
+
+/* The area on the left half of the screen: drag it to steer. */
+.touch-steer-zone {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 46%;
+  height: 100%;
+  pointer-events: auto;
+  z-index: 1;
+  touch-action: none;
+}
+
+/* The dot that shows where the finger steers from. */
+.touch-steer-dot {
+  position: absolute;
+  display: none;
+  width: 78px;
+  height: 78px;
+  margin: -39px 0 0 -39px;
+  border-radius: 50%;
+  border: 3px solid rgba(255, 176, 32, 0.6);
+  background: rgba(255, 176, 32, 0.12);
+  pointer-events: none;
+  z-index: 2;
+}
+
+/* The small buttons in the top left corner. */
+.touch-actions {
+  position: absolute;
+  left: max(10px, env(safe-area-inset-left));
+  top: max(10px, env(safe-area-inset-top));
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  max-width: 216px;
+  pointer-events: none;
+  z-index: 3;
 }
 
 .touch-btn {
-  position: absolute;
   pointer-events: auto;
   border-radius: 50%;
   border: 2px solid rgba(255, 255, 255, 0.35);
@@ -564,53 +608,199 @@ body {
   display: grid;
   place-items: center;
   user-select: none;
+  -webkit-user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: none;
+  padding: 0;
+  line-height: 1.15;
 }
 
 .touch-btn.active {
-  background: rgba(255, 176, 32, 0.75);
+  background: rgba(255, 176, 32, 0.78);
   color: #14203a;
+  border-color: rgba(255, 255, 255, 0.65);
+}
+
+/* The steering buttons in the bottom left corner. */
+.touch-steer-buttons {
+  position: absolute;
+  left: max(14px, env(safe-area-inset-left));
+  bottom: max(16px, env(safe-area-inset-bottom));
+  display: flex;
+  gap: 12px;
+  pointer-events: none;
+  z-index: 3;
+}
+
+.touch-btn.left,
+.touch-btn.right {
+  width: 78px;
+  height: 78px;
+  font-size: 26px;
+}
+
+/* The pedals in the bottom right corner. */
+.touch-pedals {
+  position: absolute;
+  right: max(14px, env(safe-area-inset-right));
+  bottom: max(16px, env(safe-area-inset-bottom));
+  display: flex;
+  align-items: flex-end;
+  gap: 14px;
+  pointer-events: none;
+  z-index: 3;
 }
 
 .touch-btn.throttle {
-  right: 18px;
-  bottom: 210px;
-  width: 92px;
-  height: 92px;
+  width: 104px;
+  height: 104px;
+  font-size: 18px;
 }
 
 .touch-btn.brake {
-  right: 120px;
-  bottom: 210px;
-  width: 76px;
-  height: 76px;
-}
-
-.touch-btn.left {
-  left: 18px;
-  bottom: 190px;
-  width: 76px;
-  height: 76px;
-}
-
-.touch-btn.right {
-  left: 104px;
-  bottom: 190px;
-  width: 76px;
-  height: 76px;
+  width: 84px;
+  height: 84px;
+  font-size: 13px;
 }
 
 .touch-btn.handbrake {
-  right: 200px;
-  bottom: 300px;
-  width: 62px;
-  height: 62px;
-  font-size: 12px;
+  width: 70px;
+  height: 70px;
+  font-size: 11px;
 }
 
 .touch-btn.small-action {
-  width: 54px;
-  height: 54px;
+  width: 52px;
+  height: 52px;
+  font-size: 12px;
+}
+
+.touch-btn.touch-fullscreen {
   font-size: 11px;
+}
+
+/* ---------- the "turn your phone" screen ---------- */
+
+.rotate-overlay {
+  z-index: 40;
+  text-align: center;
+}
+
+.rotate-phone {
+  width: 58px;
+  height: 96px;
+  margin: 0 auto 22px;
+  border: 4px solid var(--accent);
+  border-radius: 12px;
+  position: relative;
+  animation: rotate-phone 2.6s ease-in-out infinite;
+}
+
+.rotate-phone::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  bottom: 6px;
+  width: 20px;
+  height: 3px;
+  border-radius: 2px;
+  background: var(--accent);
+  transform: translateX(-50%);
+}
+
+@keyframes rotate-phone {
+  0%,
+  25% {
+    transform: rotate(0deg);
+  }
+  60%,
+  100% {
+    transform: rotate(-90deg);
+  }
+}
+
+.rotate-title {
+  font-size: 26px;
+  font-weight: 800;
+  margin-bottom: 6px;
+}
+
+.rotate-text {
+  color: var(--muted);
+  font-size: 15px;
+}
+
+/* ---------- the HUD on a phone ---------- */
+
+body.touch-mode .hud-hint {
+  display: none;
+}
+
+body.touch-mode .hud-speedometer {
+  width: 104px;
+  height: 104px;
+  right: 14px;
+  top: 152px;
+  bottom: auto;
+}
+
+body.touch-mode .hud-speed-value {
+  font-size: 30px;
+  margin-top: 2px;
+}
+
+body.touch-mode .hud-speed-unit {
+  font-size: 9px;
+  letter-spacing: 2px;
+}
+
+body.touch-mode .hud-minimap {
+  width: 128px;
+  height: 128px;
+}
+
+body.touch-mode .hud-rpm {
+  width: 180px;
+  bottom: 6px;
+}
+
+body.touch-mode .hud-gear {
+  top: 6px;
+  right: 12px;
+  font-size: 16px;
+}
+
+@media (max-height: 400px) {
+  body.touch-mode .hud-speedometer {
+    width: 92px;
+    height: 92px;
+    top: 140px;
+  }
+
+  body.touch-mode .hud-speed-value {
+    font-size: 26px;
+  }
+
+  body.touch-mode .hud-minimap {
+    width: 108px;
+    height: 108px;
+  }
+
+  .touch-btn.throttle {
+    width: 92px;
+    height: 92px;
+  }
+
+  .touch-btn.brake {
+    width: 76px;
+    height: 76px;
+  }
+
+  .touch-btn.left,
+  .touch-btn.right {
+    width: 70px;
+    height: 70px;
+  }
 }
 
 /* ---------- photo mode ---------- */

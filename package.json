@@ -24,6 +24,7 @@
     "test:debug-shot": "node tools/smoke/debug-shot.mjs http://127.0.0.1:4173/",
     "test:traffic-probe": "node tools/smoke/probe-traffic.mjs http://127.0.0.1:4173/",
     "test:swap-probe": "node tools/smoke/probe-swap.mjs http://127.0.0.1:4173/",
+    "test:mobile": "node tools/smoke/mobile-test.mjs http://127.0.0.1:4173/",
     "test:production-smoke": "node tools/smoke/production-smoke.mjs https://openroad-six-ivory.vercel.app/"
   },
   "dependencies": {

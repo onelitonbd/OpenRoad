@@ -356,7 +356,8 @@ States: **Clear, Cloudy, Rain, Fog** (storm optional). Smooth transitions over 2
 - **Garage:** carousel of 10+ cars, stat bars (speed, accel, handling), color picker, "Select".
 - **Pause menu:** resume, settings, respawn, time/weather, quit to menu.
 - **Photo mode:** pauses sim, free camera, FOV, time-of-day slider, hide HUD, save screenshot (`canvas.toBlob`).
-- **Touch controls:** appear automatically on touch devices; large, thumb-friendly.
+- **Touch controls:** appear automatically on touch devices; large, thumb-friendly. Big pedals (gas, brake, handbrake), steering buttons plus a drag area on the left half, small buttons for camera, lights, horn, reset, pause and full screen.
+- **Phones:** the game detects a phone or tablet, offers the full screen and plays in landscape (locked on Android, "turn your phone" on iOS).
 - **Loading screen:** progress while initial chunks and assets load; tips.
 - Style: bold, bright, rounded, cartoon-friendly.
 
@@ -486,6 +487,7 @@ Techniques the agent must use: instancing, chunk streaming in Web Workers, geome
 - [ ] Phase 6 Sky, day/night, weather
 - [ ] Phase 7 Garage, menus, saves, audio
 - [ ] Phase 8 Rival racing
-- [ ] Phase 9 Touch, photo mode, optimization
+- [x] Phase 9 touch controls (done early) - on-screen pedals, drag steering, full screen, landscape lock
+- [ ] Phase 9 photo mode, quality presets, optimization
 - [ ] Phase 10 Polish & release
 - [ ] Later: Supabase cloud saves, multiplayer prep

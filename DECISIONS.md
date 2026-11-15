@@ -277,3 +277,32 @@ A freshly loaded game has no traffic yet: the cars spawn in a ring around
 the player after the first frames. The production smoke test therefore
 drives for a few seconds before it reads the traffic, otherwise it would
 report an empty street for a working build.
+
+### The game detects a phone and offers the full screen
+A phone has a system bar and a browser bar, so the picture is a lot
+smaller than it could be. The full screen needs a tap (no browser allows
+a page to enter the full screen on its own), so the touch controls have a
+**FULL** button that does it. iOS Safari has no full screen for a normal
+web page - there the button says so and the player can turn the phone
+instead.
+
+### The game is played in landscape
+Chrome on Android can lock the screen to landscape
+(`screen.orientation.lock()`), but only while the page is full screen -
+so the lock happens right after the full screen request. iOS has neither,
+so the game asks the player to turn the phone: while the phone is held
+upright, a "Turn your phone" screen covers the game and the simulation
+waits. The desktop build is never touched by this.
+
+### The touch buttons use pointer events with a capture
+Every button listens to `pointerdown` / `pointerup` and takes a pointer
+capture. The gas pedal therefore stays pressed when the thumb slides off
+it, and the player can steer and accelerate with two fingers at the same
+time. The buttons are plain DOM elements, so they work with a mouse as
+well - which is what the head-less test uses.
+
+### The left half of the screen steers like a wheel
+Besides the two steering buttons, the whole left half of the screen takes
+a drag: the car steers towards the finger. That is the way most mobile
+racing games do it and it is much better than two small buttons. The
+buttons are still there for the players who prefer them.
