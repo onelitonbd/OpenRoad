@@ -306,3 +306,16 @@ Besides the two steering buttons, the whole left half of the screen takes
 a drag: the car steers towards the finger. That is the way most mobile
 racing games do it and it is much better than two small buttons. The
 buttons are still there for the players who prefer them.
+
+### The browser tests close the desktop page before they open the phone
+The test browser renders with the software rasteriser on a machine with
+two cores. A phone page that opens while the desktop page is still
+rendering gets so little CPU that the game needs minutes to start. The
+production test therefore closes the desktop page first.
+
+### The timeouts of the browser tests were silently ignored
+`page.waitForFunction` has the signature
+`waitForFunction(pageFunction, arg, options)` - the options are the
+**third** argument. Our timeouts were passed as the second one, so they
+were used as the argument of the function and every test waited for the
+default 30 seconds. The phone needed longer than that on the runner.

@@ -37,15 +37,15 @@ No environment variables are required for the current phase.
 
 ### Live build
 
-The Phase 5 build is deployed on the production alias:
+The current build is deployed on the production alias:
 
 **https://openroad-six-ivory.vercel.app/**
 
-It is served by Vercel deployment `dpl_2QLSVnfYHFWExx54dzmxdJ2nnYAv`
-(built from commit `1c94725`, state `READY`, substate `PROMOTED`, aliases
+It is served by Vercel deployment `dpl_BMx7zw4tPQDWNVNcChchShXm7K8T`
+(built from commit `755d55b`, state `READY`, substate `PROMOTED`, aliases
 `openroad-six-ivory.vercel.app`, `openroad-onelitonbds-projects.vercel.app`
 and the branch alias). The deployment is checked with the production smoke
-test below.
+test below - on the desktop **and** as a phone.
 
 ## Controls
 
@@ -206,8 +206,10 @@ gh run watch
 
 The workflow keeps the report in `tools/smoke/production-report.json` and
 the screenshot in `tools/smoke/shots/production-phase5.png`. The last run
-against the Phase 5 deployment reported 15 AI cars (3 with physics), all
-of them moving, 103 traffic lights, 162 draw calls and no console errors.
+against the live build reported 15 AI cars (3 with physics), all of them
+moving, 103 traffic lights, 162 draw calls, no console errors - and on a
+phone: the touch controls with 11 buttons, the full screen button and the
+"turn your phone" screen in portrait.
 
 ## Performance
 
