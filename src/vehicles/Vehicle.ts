@@ -98,6 +98,7 @@ export class Vehicle {
   private steerAngle = 0;
 
   private readonly tmpQuat = new THREE.Quaternion();
+  private readonly tmpQuat2 = new THREE.Quaternion();
   private readonly tmpVec = new THREE.Vector3();
   private readonly tmpVec2 = new THREE.Vector3();
 
@@ -569,13 +570,23 @@ export class Vehicle {
 
     const quat = this.tmpQuat.set(r.x, r.y, r.z, r.w);
     const down = this.tmpVec2.set(0, -1, 0).applyQuaternion(quat);
+    // Rapier reports the hard point of the suspension in world space, but the
+    // wheels are children of the car and therefore need local coordinates.
+    const inverse = this.tmpQuat2.copy(quat).invert();
 
     for (let i = 0; i < this.wheels.length; i++) {
       const mesh = this.wheels[i];
       const hard = this.controller.wheelHardPoint(i);
       const len = this.controller.wheelSuspensionLength(i) ?? 0;
       if (!hard) continue;
-      mesh.position.set(hard.x + down.x * len, hard.y + down.y * len, hard.z + down.z * len);
+      const local = this.tmpVec
+        .set(hard.x - t.x, hard.y - t.y, hard.z - t.z)
+        .applyQuaternion(inverse);
+      mesh.position.set(
+        local.x + down.x * len,
+        local.y + down.y * len,
+        local.z + down.z * len,
+      );
       // The wheel spins around its local X axis.
       mesh.rotation.x = this.controller.wheelRotation(i) ?? 0;
       // Front wheels also follow the steering angle.

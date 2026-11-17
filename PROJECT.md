@@ -420,6 +420,7 @@ Techniques the agent must use: instancing, chunk streaming in Web Workers, geome
 2. **Free assets:** Kenney.nl (CC0), Poly Pizza, Quaternius (CC0), Sketchfab (check each license), freesound.org / Pixabay for audio. Prefer **CC0**.
 3. **Blender tweaks:** recolor, simplify, rename wheel nodes (`wheel_fl`, `wheel_fr`, `wheel_rl`, `wheel_rr`), set origin at car center, export GLB.
 4. **Rules:** record every asset's source + license in `ASSETS.md`. Avoid real car brands/logos. Keep each car < 5k triangles, < 500 KB compressed.
+5. **Status:** the player car and the six kinds of traffic cars use the Kenney Car Kit (CC0) - see `ASSETS.md`. Every car still has a procedural fallback, so a missing model never stops the game.
 
 ---
 

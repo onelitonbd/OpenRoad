@@ -3,7 +3,12 @@ import RAPIER from '@dimforge/rapier3d-compat';
 import type { LanePath } from '../world/RoadNetwork';
 import { TRAFFIC_GROUPS, type PhysicsWorld } from '../physics/PhysicsWorld';
 import { Vehicle } from '../vehicles/Vehicle';
-import { buildCarMesh, type CarMesh } from '../vehicles/CarFactory';
+import {
+  buildCarMesh,
+  buildCarMeshFromModel,
+  getCarModel,
+  type CarMesh,
+} from '../vehicles/CarFactory';
 import type { VehicleConfig } from '../vehicles/VehicleConfig';
 import { clamp, damp } from '../utils/math';
 
@@ -63,7 +68,12 @@ export class TrafficCar {
     this.path = path;
     this.distance = startDistance;
 
-    this.mesh = buildCarMesh(config, color);
+    // The traffic uses the 3D model of the car when it is loaded. If the
+    // model is missing the procedural car is used instead.
+    const model = getCarModel(config.model, config);
+    this.mesh = model
+      ? buildCarMeshFromModel(config, model)
+      : buildCarMesh(config, color);
     this.vehicle = new Vehicle(physics, config, this.mesh.group, TRAFFIC_GROUPS);
     this.vehicle.setWheelMeshes(this.mesh.wheels);
     // The AI cars never drive backwards.

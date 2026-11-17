@@ -14,8 +14,9 @@ import { PhysicsWorld } from '../physics/PhysicsWorld';
 import { Vehicle } from '../vehicles/Vehicle';
 import { PlayerController } from '../vehicles/PlayerController';
 import { CameraRig } from '../vehicles/CameraRig';
-import { buildCarMesh } from '../vehicles/CarFactory';
+import { buildCarMesh, buildCarMeshFromModel, loadCarModel, type CarMesh } from '../vehicles/CarFactory';
 import { COMET_GT } from '../vehicles/cars';
+import { AI_CARS } from '../vehicles/aiCars';
 import { bus } from './EventBus';
 import { roadStreamRadius, settings } from './Settings';
 import { TrafficManager } from '../ai/TrafficManager';
@@ -75,6 +76,8 @@ export class Game {
   private rotateOverlay: RotateOverlay | null = null;
   /** The meshes of the head lights of the player car. */
   private headlightMeshes: THREE.Mesh[] = [];
+  /** Switches the head lights of the player car on and off. */
+  private setHeadlights?: (on: boolean) => void;
   /** True when the player was warned about the edge of the map. */
   private warnedAboutEdge = false;
   private headlightsOn = false;
@@ -147,6 +150,12 @@ export class Game {
     this.roadDebug = new RoadGraphDebug(this.world.roads);
     this.renderer.scene.add(this.roadDebug.object);
 
+    // --- the car models ---
+    // The player car and the cars of the traffic use 3D models. They are
+    // loaded before the traffic is created, so the cars on the road look
+    // like the car of the player.
+    await this.loadCarModels();
+
     // --- the traffic ---
     this.traffic = new TrafficManager(this.physics, this.world.roads, (x, z) =>
       this.world.isLoadedAt(x, z),
@@ -161,7 +170,9 @@ export class Game {
     this.minimap = new Minimap(this.uiRoot, this.world.roads, this.landmarks.list);
 
     // --- player car ---
-    const mesh = buildCarMesh(COMET_GT);
+    // The car uses a real 3D model when it can be loaded. If the model is
+    // missing the procedural car is used instead, so the game always starts.
+    const mesh = await this.createPlayerMesh();
     this.renderer.scene.add(mesh.group);
     this.vehicle = new Vehicle(this.physics, COMET_GT, mesh.group);
     this.vehicle.setWheelMeshes(mesh.wheels);
@@ -181,6 +192,7 @@ export class Game {
 
     // The head lights of the player car can be switched on and off.
     this.headlightMeshes = mesh.lights;
+    this.setHeadlights = mesh.setHeadlights;
 
     // The phone and tablet controls.
     this.setupMobileUI();
@@ -387,11 +399,50 @@ export class Game {
   /** Switch the head lights of the player car on and off. */
   private toggleHeadlights(): void {
     this.headlightsOn = !this.headlightsOn;
-    for (const mesh of this.headlightMeshes) {
-      const material = mesh.material as THREE.MeshLambertMaterial;
-      material.emissive.setHex(this.headlightsOn ? 0xffe9a8 : 0x000000);
+    if (this.setHeadlights) {
+      this.setHeadlights(this.headlightsOn);
+    } else {
+      for (const mesh of this.headlightMeshes) {
+        const material = mesh.material as THREE.MeshLambertMaterial;
+        material.emissive.setHex(this.headlightsOn ? 0xffe9a8 : 0x000000);
+      }
     }
     this.hud.showToast(this.headlightsOn ? 'Head lights on' : 'Head lights off', 1.2);
+  }
+
+  /**
+   * Loads the 3D models of all the cars.
+   *
+   * A model that cannot be loaded is simply skipped - the car then uses the
+   * procedural model, so a missing file never stops the game.
+   */
+  private async loadCarModels(): Promise<void> {
+    const configs = [COMET_GT, ...AI_CARS];
+    await Promise.all(
+      configs.map((config) => {
+        if (!config.model || config.model === 'procedural') return Promise.resolve(null);
+        return loadCarModel(config.model, config);
+      }),
+    );
+  }
+
+  /**
+   * Builds the visual car of the player.
+   *
+   * The 3D model is loaded from the public folder. When it cannot be loaded
+   * the procedural car is used, so a missing file never stops the game.
+   */
+  private async createPlayerMesh(): Promise<CarMesh> {
+    const config = COMET_GT;
+    if (config.model && config.model !== 'procedural') {
+      const model = await loadCarModel(config.model, config);
+      if (model) {
+        console.info(`[car] using the 3D model ${config.model}`);
+        return buildCarMeshFromModel(config, model);
+      }
+      console.warn(`[car] the model ${config.model} could not be loaded - using the built in car`);
+    }
+    return buildCarMesh(config);
   }
 
   /** One fixed physics step. */

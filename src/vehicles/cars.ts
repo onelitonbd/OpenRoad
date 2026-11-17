@@ -45,7 +45,7 @@ export const COMET_GT: VehicleConfig = {
   rearAxleOffset: -1.42,
   groundClearance: 0.2,
   trackWidth: 0.82,
-  model: 'procedural',
+  model: 'models/sedan-sports.glb',
   color: '#ff5d5d',
   accentColor: '#20242e',
   bodyShape: 'coupe',

@@ -130,11 +130,34 @@ is drawn on the minimap, and the land falls into the sea there, so you
 can see where the world ends. `tools/smoke/shots/map.png` is the whole
 road network in one picture.
 
+## The cars
+
+The car of the player and the cars of the traffic are **real 3D models**
+instead of boxes: they have a body, a windscreen, a rear window, a spoiler,
+head lights and wheels that turn and spin. The models come from the
+**Kenney Car Kit** (public domain, CC0) and are listed in `ASSETS.md`.
+
+The game does not use the models as they are. When a model is loaded it is
+
+- scaled so that it fills the collision box of the car exactly,
+- bent along its length so that the wheel arches sit where the physics puts
+  the wheels,
+- rebuilt with its four wheels as separate objects, so the suspension, the
+  steering and the wheel spin come from the driving physics.
+
+If a model cannot be loaded - a missing file, a slow connection - the game
+falls back to the procedural car it always had. The game never waits for a
+model and never breaks because of one.
+
 ## The traffic
 
 The AI traffic spawns in a ring of 150 - 400 m around the player and is
 removed again when it is more than 520 m away. The number of cars depends
 on the quality preset (Low 15, Medium 30, High 50).
+
+Six kinds of cars drive on the roads: a sedan, a hatchback, a van, a
+pickup, a taxi and a small SUV. Every kind has its own model and its own
+colour, so the street looks mixed.
 
 Every car drives on a **lane** of the road network: it follows the lane,
 keeps to the right side, obeys the speed limit of the road, slows down
@@ -160,7 +183,7 @@ technical decisions that were made along the way.
 src/
   core/       Game loop, renderer, input, settings, event bus
   physics/    Rapier wrapper and collision groups
-  vehicles/   Vehicle physics, car data, procedural car mesh, cameras
+  vehicles/   Vehicle physics, car data, car models (GLB + procedural), cameras
   ui/         HUD, minimap, tuning panel, styles
   utils/      Math, seeded random, object pool, debug overlay
   world/      Terrain, regions, chunk streaming, roads, buildings, props
@@ -193,6 +216,15 @@ The `test:roads` suite is the one that guards the map: it checks that no
 road leaves the border of the world, that no road hangs in the air, that
 no road has zero length, that two builds give the same map and that the
 list of the roads near the car does not change while the car drives.
+
+### Pictures of the car
+
+```bash
+node tools/smoke/car-shot.mjs http://127.0.0.1:4173/ tools/smoke/shots/car
+```
+
+Moves the camera around the player car and takes four pictures (front, side,
+rear and top). `LIGHTS=1` switches the head lights on first.
 
 ### Head-less browser test
 

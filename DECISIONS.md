@@ -397,3 +397,49 @@ to add a road.
 The test in `tools/road-test.ts` checks that no road leaves the border of
 the world, that no road hangs in the air, that no road has zero length
 and that two builds give the same map.
+
+---
+
+## Phase 8 - The cars get real 3D models
+
+### The Kenney Car Kit (CC0) instead of a paid model
+The car of the player was a pile of boxes. Real car models for the web are
+usually either paid, licence restricted or need an account. The **Kenney Car
+Kit** is public domain (CC0 1.0), needs no attribution and ships ready made
+GLB files with four named wheels, so it can be used without buying
+anything. The models, their source and their licence are listed in
+`ASSETS.md`.
+
+The paint of the models is baked into the colour atlas of the file, so
+`tools/prepare-car-model.mjs` rewrites the swatch of the atlas with the
+colour of the car. The geometry of the kit is not touched - the game does
+that when it loads the model.
+
+### The model is fitted to the physics, not the other way round
+The models of the kit are a little shorter in the wheel base than the
+physics of the car wants, and their body is narrower than the collision
+box. Changing the driving numbers to fit the models would change how the
+car drives, so the **model** is fitted to the physics instead:
+
+- the body is scaled so that it fills the collision box of the car,
+- the body is bent along its length (a smooth spline) so that the wheel
+  arches end up exactly on the axles of the physics,
+- the four wheels become separate objects that the vehicle moves, spins and
+  steers.
+
+The bending is done once when the model is loaded and the result is shared
+by every car of that kind, so it costs nothing at runtime.
+
+### The wheels were never visible
+`DynamicRayCastVehicleController.wheelHardPoint()` returns the point in
+**world space**, but the wheels are children of the car and need **local**
+coordinates. The wheels were therefore placed at the position of the car
+plus the position of the car - a long way outside the world, where nobody
+ever saw them. Both the procedural car and the model cars now convert the
+point into the local space of the car first.
+
+### The traffic uses the models too
+Every kind of traffic car has its own model and its own colour. The models
+are loaded before the traffic is created, and a car that has no model (yet)
+uses the procedural one. The physics of the traffic is unchanged - only the
+look of the cars is different.

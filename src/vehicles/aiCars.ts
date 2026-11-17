@@ -26,6 +26,7 @@ function trafficCar(
   color: string,
   accentColor: string,
   maxSpeedKmh: number,
+  model: string,
 ): VehicleConfig {
   const length = dimensions[2];
   return {
@@ -58,24 +59,34 @@ function trafficCar(
     drag: 1,
     stabilityAssist: 0.25,
     description: `${name} - one of the cars on the road.`,
-    model: 'procedural',
+    model,
     color,
     accentColor,
     bodyShape,
   };
 }
 
-/** The traffic cars. The traffic picks one of them at random. */
+/**
+ * The traffic cars. The traffic picks one of them at random.
+ *
+ * Every kind of car has its own 3D model (the Kenney Car Kit, CC0). The
+ * colour of the model is the colour of the car, so the traffic looks mixed.
+ */
 export const AI_CARS: VehicleConfig[] = [
-  trafficCar('sedan', 'Sedan', 'sedan', [1.78, 1.42, 4.4], '#c8ccd4', '#8f959e', 160),
-  trafficCar('hatch', 'Hatchback', 'hatch', [1.72, 1.46, 3.9], '#d8dde4', '#7d838c', 150),
-  trafficCar('van', 'Van', 'suv', [1.9, 2.0, 4.8], '#e2e6ea', '#9aa1a9', 140),
-  trafficCar('pickup', 'Pickup', 'truck', [1.95, 1.72, 5.1], '#9fb0c4', '#5d6b7d', 150),
-  trafficCar('taxi', 'Taxi', 'sedan', [1.8, 1.44, 4.5], '#f0c33c', '#2b2b2b', 155),
-  trafficCar('compact', 'Compact', 'hatch', [1.66, 1.4, 3.7], '#9fd0b0', '#4f7a63', 145),
+  trafficCar('sedan', 'Sedan', 'sedan', [1.78, 1.42, 4.4], '#c8ccd4', '#8f959e', 160, 'models/sedan.glb'),
+  trafficCar('hatch', 'Hatchback', 'hatch', [1.72, 1.46, 3.9], '#d8dde4', '#7d838c', 150, 'models/hatchback-sports.glb'),
+  trafficCar('van', 'Van', 'suv', [1.9, 2.0, 4.8], '#e2e6ea', '#9aa1a9', 140, 'models/van.glb'),
+  trafficCar('pickup', 'Pickup', 'truck', [1.95, 1.72, 5.1], '#9fb0c4', '#5d6b7d', 150, 'models/truck-flat.glb'),
+  trafficCar('taxi', 'Taxi', 'sedan', [1.8, 1.44, 4.5], '#f0c33c', '#2b2b2b', 155, 'models/taxi.glb'),
+  trafficCar('compact', 'Compact', 'hatch', [1.66, 1.4, 3.7], '#9fd0b0', '#4f7a63', 145, 'models/suv.glb'),
 ];
 
-/** The paint colours the traffic uses (the taxi keeps its yellow). */
+/**
+ * The paint colours for the traffic cars.
+ *
+ * They are only used when a car has to fall back to the procedural model -
+ * the 3D models bring their own colour.
+ */
 export const AI_PAINT_COLORS = [
   '#c8ccd4', '#d8dde4', '#9fb0c4', '#7f96ad', '#b8b2a6',
   '#8fa3b8', '#c2c6cf', '#a9b2be', '#6f7d8c', '#d0c3b4',

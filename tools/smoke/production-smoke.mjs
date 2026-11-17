@@ -126,6 +126,7 @@ const report = {
   map: null,
   gearbox: null,
   roadMeshes: null,
+  car: null,
 };
 
 try {
@@ -216,6 +217,37 @@ try {
     return { near: near.length, missing, meshes: renderer.meshCount };
   });
   report.roadMeshes = roadMeshes;
+
+  // The car of the player has to have four wheels that stand next to it.
+  // The wheels are children of the car, so their position is local - a
+  // wheel that stands thousands of metres away means that the world space
+  // of the physics was used as a local position.
+  const car = await page.evaluate(() => {
+    const game = window.openRoad;
+    const group = game?.vehicle?.object;
+    const build = window.__openroad?.build ?? null;
+    if (!group) return { build, checked: false, wheels: 0, maxOffset: 999 };
+    const wheels = group.children.filter(
+      (child) => typeof child.name === 'string' && child.name.startsWith('wheel_'),
+    );
+    let maxOffset = 0;
+    for (const wheel of wheels) {
+      maxOffset = Math.max(
+        maxOffset,
+        Math.hypot(wheel.position.x, wheel.position.y, wheel.position.z),
+      );
+    }
+    // A car that is built from a 3D model uses a texture.
+    const model = group.children.some((child) => child.isMesh && !!child.material?.map);
+    return {
+      build,
+      checked: build === 'car-models-1',
+      wheels: wheels.length,
+      maxOffset: Number(maxOffset.toFixed(3)),
+      model,
+    };
+  });
+  report.car = car;
 
   // Open the debug overlay for the AI numbers.
   await page.keyboard.press('F3');
@@ -323,6 +355,9 @@ report.ok =
   !!report.roadMeshes &&
   report.roadMeshes.missing >= 0 &&
   report.roadMeshes.missing === 0 &&
+  !!report.car &&
+  (!report.car.checked ||
+    (report.car.wheels === 4 && report.car.maxOffset < 3)) &&
   !!mobile &&
   mobile.controlsVisible &&
   mobile.hasFullscreen &&
@@ -351,6 +386,7 @@ if (process.env.GITHUB_STEP_SUMMARY) {
     `- Traffic: ${last ? `${last.cars} cars, ${last.physics} with physics, ${last.moving} moving` : 'n/a'}`,
     `- Map: ${report.map ? `${report.map.after.edges} roads, unchanged while driving: ${report.map.stable ? 'yes' : 'no'}, all inside the border: ${report.map.insideBounds ? 'yes' : 'no'}` : 'n/a'}`,
     `- Gearbox: brake gear ${report.gearbox?.brakeGear ?? 'n/a'}, reverse gear ${report.gearbox?.reverseGear ?? 'n/a'} at ${(report.gearbox?.reverseSpeed ?? 0).toFixed(1)} m/s`,
+    `- Car: ${report.car?.wheels ?? 'n/a'} wheels, 3D model: ${report.car?.model ? 'yes' : 'no'}, wheel offset: ${report.car?.maxOffset ?? 'n/a'} m`,
     `- Road meshes: ${report.roadMeshes?.meshes ?? 'n/a'} built, ${report.roadMeshes?.missing ?? 'n/a'} of ${report.roadMeshes?.near ?? 'n/a'} roads near the car are missing`,
     `- Phone: ${mobile ? `${mobile.buttons} touch buttons, full screen ${mobile.hasFullscreen ? 'yes' : 'no'}, "turn your phone" in portrait: ${mobile.rotateVisibleInPortrait ? 'yes' : 'no'}` : 'n/a'}`,
     '',

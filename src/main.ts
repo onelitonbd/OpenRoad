@@ -2,6 +2,15 @@ import './ui/styles.css';
 import { Game } from './core/Game';
 
 /**
+ * The build of the game.
+ *
+ * The head-less smoke test uses it to know which checks it can run: a
+ * deployment that is a little older simply does not have the marker and the
+ * new checks are skipped.
+ */
+export const BUILD_ID = 'car-models-1';
+
+/**
  * Entry point.
  *
  * Shows a simple loading screen while Rapier's WASM module is downloaded and
@@ -57,6 +66,7 @@ async function bootstrap(): Promise<void> {
   // A small hook used by the head-less smoke test.
   (window as unknown as { __openroad?: unknown }).__openroad = {
     ready: true,
+    build: BUILD_ID,
     stats: () => {
       const info = game.renderer.renderer.info;
       const position = game.vehicle.body.translation();
