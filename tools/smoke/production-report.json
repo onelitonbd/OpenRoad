@@ -11,111 +11,39 @@
     "chunksLoaded": 44,
     "chunkQueue": 0,
     "position": [
-      386.5928039550781,
-      5.850159645080566,
-      -0.40994325280189514
+      386.5362243652344,
+      5.850097179412842,
+      0.8380963802337646
     ],
-    "speedKmh": 4
+    "speedKmh": 8
   },
   "traffic": [
     {
-      "t": 19,
+      "t": 18,
       "cars": 15,
       "physics": 3,
       "moving": 13,
       "below": 0,
       "speeds": [
-        30,
-        46,
-        30,
-        30,
-        46,
-        30,
-        0,
-        25,
-        46,
-        30,
-        33,
-        30,
-        26,
-        16,
-        0
-      ]
-    },
-    {
-      "t": 21,
-      "cars": 15,
-      "physics": 3,
-      "moving": 13,
-      "below": 0,
-      "speeds": [
-        31,
-        47,
-        31,
-        31,
-        47,
-        31,
-        0,
-        26,
-        47,
-        31,
-        33,
-        31,
-        27,
-        18,
-        0
-      ]
-    },
-    {
-      "t": 23,
-      "cars": 15,
-      "physics": 3,
-      "moving": 13,
-      "below": 0,
-      "speeds": [
-        33,
+        32,
         49,
-        33,
-        33,
+        32,
+        32,
         49,
-        33,
+        32,
         0,
         27,
         49,
-        33,
-        36,
-        33,
+        32,
+        35,
+        32,
         29,
         21,
         0
       ]
     },
     {
-      "t": 25,
-      "cars": 15,
-      "physics": 3,
-      "moving": 13,
-      "below": 0,
-      "speeds": [
-        33,
-        50,
-        33,
-        33,
-        50,
-        33,
-        0,
-        28,
-        50,
-        33,
-        37,
-        33,
-        31,
-        21,
-        0
-      ]
-    },
-    {
-      "t": 27,
+      "t": 20,
       "cars": 15,
       "physics": 3,
       "moving": 13,
@@ -131,15 +59,87 @@
         28,
         51,
         34,
-        39,
+        38,
         34,
         32,
         21,
         0
       ]
+    },
+    {
+      "t": 22,
+      "cars": 15,
+      "physics": 3,
+      "moving": 13,
+      "below": 0,
+      "speeds": [
+        34,
+        52,
+        34,
+        34,
+        52,
+        34,
+        0,
+        28,
+        52,
+        34,
+        39,
+        34,
+        33,
+        21,
+        0
+      ]
+    },
+    {
+      "t": 24,
+      "cars": 15,
+      "physics": 3,
+      "moving": 13,
+      "below": 0,
+      "speeds": [
+        35,
+        52,
+        35,
+        35,
+        52,
+        35,
+        0,
+        28,
+        52,
+        35,
+        41,
+        35,
+        34,
+        21,
+        0
+      ]
+    },
+    {
+      "t": 26,
+      "cars": 15,
+      "physics": 3,
+      "moving": 13,
+      "below": 0,
+      "speeds": [
+        36,
+        53,
+        36,
+        36,
+        53,
+        36,
+        0,
+        28,
+        53,
+        36,
+        43,
+        36,
+        35,
+        20,
+        0
+      ]
     }
   ],
-  "debugOverlay": "FPS 4  (10034.0 ms)\ndraw calls 113\ntriangles 67,908\ngeometries 111  textures 13\nheap 35.7 MB\nchunks 44 loaded / 0 queued\nai 15 active / 4 physics\ntraffic lights 96\npos 387, -0",
+  "debugOverlay": "FPS 4  (12144.5 ms)\ndraw calls 113\ntriangles 67,908\ngeometries 111  textures 13\nheap 35.6 MB\nchunks 44 loaded / 0 queued\nai 15 active / 4 physics\ntraffic lights 96\npos 387, 1",
   "mobile": {
     "controlsVisible": true,
     "buttons": 12,
@@ -165,9 +165,9 @@
   },
   "gearbox": {
     "brakeGear": 1,
-    "brakeSpeed": -0.0033523468920568233,
+    "brakeSpeed": 0.0032901239909321825,
     "reverseGear": -1,
-    "reverseSpeed": -1.3261960295691786
+    "reverseSpeed": -1.8451697338747972
   },
   "roadMeshes": {
     "near": 12,
@@ -178,7 +178,7 @@
     "build": "car-models-1",
     "checked": true,
     "wheels": 4,
-    "maxOffset": 1.699,
+    "maxOffset": 1.704,
     "model": true
   },
   "trafficModels": {
