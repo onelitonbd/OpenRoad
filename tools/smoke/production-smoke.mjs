@@ -255,7 +255,9 @@ try {
   const trafficModels = await page.evaluate(() => {
     const cars = window.openRoad?.traffic?.cars ?? [];
     let withModel = 0;
+    const kinds = new Set();
     for (const car of cars) {
+      if (car?.config?.id) kinds.add(car.config.id);
       const group = car?.mesh?.group;
       if (!group) continue;
       let textured = false;
@@ -269,7 +271,7 @@ try {
       });
       if (textured) withModel += 1;
     }
-    return { cars: cars.length, withModel };
+    return { cars: cars.length, withModel, kinds: [...kinds].sort() };
   });
   report.trafficModels = trafficModels;
 
@@ -385,7 +387,8 @@ report.ok =
   (!report.car?.checked ||
     (!!report.trafficModels &&
       report.trafficModels.cars > 0 &&
-      report.trafficModels.withModel === report.trafficModels.cars)) &&
+      report.trafficModels.withModel === report.trafficModels.cars &&
+      report.trafficModels.kinds.length >= 6)) &&
   !!mobile &&
   mobile.controlsVisible &&
   mobile.hasFullscreen &&
@@ -415,7 +418,7 @@ if (process.env.GITHUB_STEP_SUMMARY) {
     `- Map: ${report.map ? `${report.map.after.edges} roads, unchanged while driving: ${report.map.stable ? 'yes' : 'no'}, all inside the border: ${report.map.insideBounds ? 'yes' : 'no'}` : 'n/a'}`,
     `- Gearbox: brake gear ${report.gearbox?.brakeGear ?? 'n/a'}, reverse gear ${report.gearbox?.reverseGear ?? 'n/a'} at ${(report.gearbox?.reverseSpeed ?? 0).toFixed(1)} m/s`,
     `- Car: ${report.car?.wheels ?? 'n/a'} wheels, 3D model: ${report.car?.model ? 'yes' : 'no'}, wheel offset: ${report.car?.maxOffset ?? 'n/a'} m`,
-    `- Traffic models: ${report.trafficModels ? `${report.trafficModels.withModel} of ${report.trafficModels.cars} cars use a 3D model` : 'n/a'}`,
+    `- Traffic models: ${report.trafficModels ? `${report.trafficModels.withModel} of ${report.trafficModels.cars} cars use a 3D model, kinds: ${report.trafficModels.kinds.join(', ') || 'none'}` : 'n/a'}`,
     `- Road meshes: ${report.roadMeshes?.meshes ?? 'n/a'} built, ${report.roadMeshes?.missing ?? 'n/a'} of ${report.roadMeshes?.near ?? 'n/a'} roads near the car are missing`,
     `- Phone: ${mobile ? `${mobile.buttons} touch buttons, full screen ${mobile.hasFullscreen ? 'yes' : 'no'}, "turn your phone" in portrait: ${mobile.rotateVisibleInPortrait ? 'yes' : 'no'}` : 'n/a'}`,
     '',
