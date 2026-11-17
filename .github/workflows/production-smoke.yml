@@ -10,6 +10,7 @@ on:
     paths:
       - .github/workflows/production-smoke.yml
       - tools/smoke/production-smoke.mjs
+      - tools/smoke/production-traffic-shot.mjs
   workflow_dispatch:
     inputs:
       url:
@@ -52,6 +53,14 @@ jobs:
             tools/smoke/production-report.json \
             tools/smoke/shots/production-phase5.png
 
+      - name: Photograph the traffic of the deployed build
+        env:
+          CHROMIUM_PATH: ${{ steps.chromium.outputs.path }}
+        run: |
+          node tools/smoke/production-traffic-shot.mjs \
+            "${{ inputs.url || 'https://openroad-six-ivory.vercel.app/' }}" \
+            tools/smoke/shots/production-traffic.png
+
       - name: Store the report and the screenshot
         if: always()
         uses: actions/upload-artifact@v4
@@ -60,6 +69,7 @@ jobs:
           path: |
             tools/smoke/production-report.json
             tools/smoke/shots/production-phase5.png
+            tools/smoke/shots/production-traffic.png
 
       - name: Keep the report in the branch
         if: always()
@@ -67,7 +77,7 @@ jobs:
           if [ -f tools/smoke/production-report.json ]; then
             git config user.name "openroad-ci"
             git config user.email "ci@openroad.dev"
-            git add tools/smoke/production-report.json tools/smoke/shots/production-phase5.png
+            git add tools/smoke/production-report.json tools/smoke/shots/production-phase5.png tools/smoke/shots/production-traffic.png
             if git diff --cached --quiet; then
               echo "nothing to commit"
             else

@@ -59,6 +59,9 @@ the model when it is loaded (see `CarFactory.ts`).
   `wheel-front-left`, `wheel-front-right`, `wheel-back-left` and
   `wheel-back-right` are understood, as are `wheel_fl` and friends. When the
   names are useless the position of the wheels is used instead.
+- A model may carry a spare wheel (the SUV of the kit has one on the back).
+  A wheel whose name has no side in it is not one of the four wheels that the
+  car drives on - it stays part of the body and is drawn with it.
 - The model has to face **+Z** and stand on **y = 0** (the bottom of the
   tyres).
 - The car must look right without a logo or a brand.

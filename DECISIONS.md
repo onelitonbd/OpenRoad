@@ -443,3 +443,14 @@ Every kind of traffic car has its own model and its own colour. The models
 are loaded before the traffic is created, and a car that has no model (yet)
 uses the procedural one. The physics of the traffic is unchanged - only the
 look of the cars is different.
+
+The SUV of the kit carries a **spare wheel** on its back. It is a wheel with
+a name, but it is not one of the four wheels that the car drives on. The
+wheel search used to insist on exactly four wheels and threw the whole SUV
+away, so the compact car of the traffic drove around as a pile of boxes. The
+search now takes the four wheels that have a side in their name and leaves
+the spare wheel with the body, where it is drawn as part of the car.
+
+The production smoke test counts the cars of the traffic that use a model,
+so a car that silently falls back to the built in car is noticed right
+away.

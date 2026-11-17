@@ -381,20 +381,34 @@ const WHEEL_ORDER = ['front-left', 'front-right', 'back-left', 'back-right'] as 
  * The names of the Kenney models are `wheel-front-left` and friends, other
  * kits use `wheel_fl`. When the names are useless the position of the wheels
  * is used instead.
+ *
+ * Some cars carry a spare wheel on the back. It has no side in its name and
+ * it does not touch the road, so it is not one of the four wheels that the
+ * car drives on.
  */
 function orderWheels(wheels: THREE.Object3D[]): THREE.Object3D[] | null {
-  if (wheels.length !== 4) return null;
+  if (wheels.length < 4) return null;
+
+  const nameOf = (wheel: THREE.Object3D): string => wheel.name.toLowerCase();
+  const isFront = (name: string): boolean =>
+    name.includes('front') || name.includes('fwd');
+  const isRear = (name: string): boolean =>
+    name.includes('back') || name.includes('rear') || name.includes('rwd');
+  const isLeft = (name: string): boolean => name.includes('left');
+  const isRight = (name: string): boolean => name.includes('right');
+
+  // The wheels with a side in their name are the ones on the axles.
+  const onAxles = wheels.filter((wheel) => {
+    const name = nameOf(wheel);
+    return isLeft(name) || isRight(name);
+  });
+  const pool = onAxles.length >= 4 ? onAxles : wheels;
 
   const byName = (front: boolean, left: boolean): THREE.Object3D | null => {
-    const found = wheels.find((wheel) => {
-      const name = wheel.name.toLowerCase();
-      const isFront = name.includes('front') || name.includes('fwd');
-      const isRear =
-        name.includes('back') || name.includes('rear') || name.includes('rwd');
-      const isLeft = name.includes('left');
-      const isRight = name.includes('right');
-      if (front ? !isFront : !isRear) return false;
-      return left ? isLeft : isRight;
+    const found = pool.find((wheel) => {
+      const name = nameOf(wheel);
+      if (front ? !isFront(name) : !isRear(name)) return false;
+      return left ? isLeft(name) : isRight(name);
     });
     return found ?? null;
   };
@@ -408,7 +422,7 @@ function orderWheels(wheels: THREE.Object3D[]): THREE.Object3D[] | null {
       // The names are useless: sort the wheels by their position. The front
       // wheels are the ones with the largest z, the left ones the ones with
       // the largest x (the car faces +Z, so its left side is +X).
-      const sorted = wheels
+      const sorted = pool
         .filter((w) => !result.includes(w))
         .sort((a, b) => {
           const dz = b.position.z - a.position.z;
@@ -547,11 +561,11 @@ async function prepareCarModel(
   scene.updateMatrixWorld(true);
 
   // --- find the wheels and the body ---------------------------------------
-  const wheelCandidates: THREE.Object3D[] = [];
+  const wheelCandidates: THREE.Mesh[] = [];
   const bodyMeshes: THREE.Mesh[] = [];
   scene.traverse((child) => {
     if (!(child as THREE.Mesh).isMesh) return;
-    if (child.name.toLowerCase().includes('wheel')) wheelCandidates.push(child);
+    if (child.name.toLowerCase().includes('wheel')) wheelCandidates.push(child as THREE.Mesh);
     else bodyMeshes.push(child as THREE.Mesh);
   });
   const wheels = orderWheels(wheelCandidates);
@@ -559,6 +573,10 @@ async function prepareCarModel(
     console.warn(`[car] the model ${path} has no usable wheels`);
     return null;
   }
+  // A spare wheel on the back of a car is not one of the four wheels that
+  // the car drives on - it stays part of the body and is drawn with it.
+  const spareWheels = wheelCandidates.filter((wheel) => !wheels.includes(wheel));
+  const drawnParts = [...bodyMeshes, ...spareWheels];
 
   // The transform of every mesh relative to the root of the model.
   const rootInverse = new THREE.Matrix4().copy(scene.matrixWorld).invert();
@@ -609,7 +627,7 @@ async function prepareCarModel(
 
   // --- bake the transformation into the body geometry ----------------------
   const body: { geometry: THREE.BufferGeometry; material: THREE.Material }[] = [];
-  for (const mesh of bodyMeshes) {
+  for (const mesh of drawnParts) {
     const geometry = mesh.geometry.clone();
     geometry.applyMatrix4(relative(mesh));
     const position = geometry.attributes.position as THREE.BufferAttribute;

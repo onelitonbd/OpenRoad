@@ -127,6 +127,7 @@ const report = {
   gearbox: null,
   roadMeshes: null,
   car: null,
+  trafficModels: null,
 };
 
 try {
@@ -249,6 +250,29 @@ try {
   });
   report.car = car;
 
+  // The cars of the traffic have to use their 3D model as well. A car
+  // that fell back to the built in car has no texture.
+  const trafficModels = await page.evaluate(() => {
+    const cars = window.openRoad?.traffic?.cars ?? [];
+    let withModel = 0;
+    for (const car of cars) {
+      const group = car?.mesh?.group;
+      if (!group) continue;
+      let textured = false;
+      group.traverse((child) => {
+        if (!child.isMesh) return;
+        const material = child.material;
+        const mapped = Array.isArray(material)
+          ? material.some((m) => !!m?.map)
+          : !!material?.map;
+        if (mapped) textured = true;
+      });
+      if (textured) withModel += 1;
+    }
+    return { cars: cars.length, withModel };
+  });
+  report.trafficModels = trafficModels;
+
   // Open the debug overlay for the AI numbers.
   await page.keyboard.press('F3');
   await page.waitForTimeout(1500);
@@ -358,6 +382,10 @@ report.ok =
   !!report.car &&
   (!report.car.checked ||
     (report.car.wheels === 4 && report.car.maxOffset < 3)) &&
+  (!report.car?.checked ||
+    (!!report.trafficModels &&
+      report.trafficModels.cars > 0 &&
+      report.trafficModels.withModel === report.trafficModels.cars)) &&
   !!mobile &&
   mobile.controlsVisible &&
   mobile.hasFullscreen &&
@@ -387,6 +415,7 @@ if (process.env.GITHUB_STEP_SUMMARY) {
     `- Map: ${report.map ? `${report.map.after.edges} roads, unchanged while driving: ${report.map.stable ? 'yes' : 'no'}, all inside the border: ${report.map.insideBounds ? 'yes' : 'no'}` : 'n/a'}`,
     `- Gearbox: brake gear ${report.gearbox?.brakeGear ?? 'n/a'}, reverse gear ${report.gearbox?.reverseGear ?? 'n/a'} at ${(report.gearbox?.reverseSpeed ?? 0).toFixed(1)} m/s`,
     `- Car: ${report.car?.wheels ?? 'n/a'} wheels, 3D model: ${report.car?.model ? 'yes' : 'no'}, wheel offset: ${report.car?.maxOffset ?? 'n/a'} m`,
+    `- Traffic models: ${report.trafficModels ? `${report.trafficModels.withModel} of ${report.trafficModels.cars} cars use a 3D model` : 'n/a'}`,
     `- Road meshes: ${report.roadMeshes?.meshes ?? 'n/a'} built, ${report.roadMeshes?.missing ?? 'n/a'} of ${report.roadMeshes?.near ?? 'n/a'} roads near the car are missing`,
     `- Phone: ${mobile ? `${mobile.buttons} touch buttons, full screen ${mobile.hasFullscreen ? 'yes' : 'no'}, "turn your phone" in portrait: ${mobile.rotateVisibleInPortrait ? 'yes' : 'no'}` : 'n/a'}`,
     '',
