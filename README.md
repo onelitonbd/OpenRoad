@@ -267,9 +267,16 @@ gh run watch
 The workflow keeps the report in `tools/smoke/production-report.json` and
 the screenshot in `tools/smoke/shots/production-phase5.png`. The last run
 against the live build reported 15 AI cars (3 with physics), all of them
-moving, 103 traffic lights, 162 draw calls, no console errors - and on a
-phone: the touch controls with 11 buttons, the full screen button and the
-"turn your phone" screen in portrait.
+moving, all of them with their 3D model, 103 traffic lights, 162 draw
+calls, no console errors - and on a phone: the touch controls with 11
+buttons, the full screen button and the "turn your phone" screen in
+portrait.
+
+The workflow also takes a picture of the traffic of the deployed build
+(`tools/smoke/shots/production-traffic.png`) with
+`tools/smoke/production-traffic-shot.mjs`. It moves the camera behind the
+closest AI car and reports how many of the cars use a 3D model - a car
+that quietly fell back to the built in car is noticed right away.
 
 ## Performance
 
