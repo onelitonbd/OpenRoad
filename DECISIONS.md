@@ -454,3 +454,15 @@ the spare wheel with the body, where it is drawn as part of the car.
 The production smoke test counts the cars of the traffic that use a model,
 so a car that silently falls back to the built in car is noticed right
 away.
+
+### The pickup never came
+All the numbers of the game come from a seeded generator, so every run
+looks the same. The kind of the traffic car was drawn with a random number
+from that stream - and the stream never produced the pickup. The pickup
+was in the list of cars, it had a model and a colour, but it never drove
+on a road: the street showed five kinds of car instead of six.
+
+The kinds are now drawn from a **bag** that is shuffled again when it is
+empty. Every kind comes up once per round, so the street really is mixed
+and no model is left unused. The bag has its own generator, so the other
+decisions of the game stay exactly as they were.

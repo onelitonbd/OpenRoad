@@ -11,6 +11,7 @@ import { Terrain, CHUNK_SIZE } from '../src/world/Terrain';
 import { RoadNetwork } from '../src/world/RoadNetwork';
 import { generateChunkData } from '../src/world/chunkData';
 import { TrafficManager } from '../src/ai/TrafficManager';
+import { AI_CARS } from '../src/vehicles/aiCars';
 
 /** How long the traffic is simulated (in seconds). */
 const DURATION = 600;
@@ -31,6 +32,7 @@ interface CarInfo {
   physicsMode: boolean;
   position: { x: number; y: number; z: number };
   vehicle: { heading: number };
+  config?: { id: string };
 }
 
 async function main(): Promise<void> {
@@ -84,6 +86,10 @@ async function main(): Promise<void> {
   const stopTimes = new Map<unknown, number>();
   const worstStop = new Map<unknown, number>();
 
+  // The kinds of car that drove by - every kind has to show up, otherwise
+  // a model of the traffic is never seen.
+  const kinds = new Set<string>();
+
   for (let i = 0; i < steps; i++) {
     traffic.update(dt, playerX, playerZ);
     physics.step();
@@ -91,6 +97,7 @@ async function main(): Promise<void> {
 
     if (i % 30 !== 0) continue;
     for (const car of traffic.cars as unknown as CarInfo[]) {
+      if (car.config?.id) kinds.add(car.config.id);
       const p = car.position;
       const ground = terrain.groundHeight(p.x, p.z);
       if (p.y < ground - 2) belowGround++;
@@ -163,6 +170,7 @@ async function main(): Promise<void> {
     `  standing still  : ${stoppedSamples} (${queuedSamples} of them waiting or queuing up)`,
   );
   console.log(`  longest stops   : ${stops.slice(0, 5).map((v) => v.toFixed(1)).join(', ')} s`);
+  console.log(`  kinds of car    : ${[...kinds].sort().join(', ')}`);
 
   traffic.dispose();
   physics.dispose();
@@ -183,6 +191,10 @@ async function main(): Promise<void> {
   check(
     (stops[0] ?? 0) < 60,
     `a car was stuck for ${(stops[0] ?? 0).toFixed(0)} s`,
+  );
+  check(
+    kinds.size === AI_CARS.length,
+    `only ${kinds.size} of the ${AI_CARS.length} kinds of car drove by`,
   );
   if (failed) process.exit(1);
   console.log('OK: the traffic drives on the roads.');

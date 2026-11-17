@@ -7,6 +7,7 @@ import type { RoadNetwork, LanePath, RoadEdge } from '../world/RoadNetwork';
 import { TrafficCar } from './TrafficCar';
 import { IntersectionManager } from './Intersection';
 import { AI_CARS, AI_PAINT_COLORS } from '../vehicles/aiCars';
+import type { VehicleConfig } from '../vehicles/VehicleConfig';
 
 /** The cars are spawned in this ring around the player. */
 const SPAWN_MIN = 150;
@@ -44,6 +45,16 @@ export class TrafficManager {
   private readonly network: RoadNetwork;
   private readonly intersections: IntersectionManager;
   private readonly rng = new Rng(0x5eed1a7e);
+  /**
+   * The kinds of car that still have to come up.
+   *
+   * The kinds are drawn from a shuffled bag, so every kind of car shows up
+   * once per round. With a plain random number the pickup never came -
+   * the numbers are seeded, so the same cars always came.
+   */
+  private readonly kindBag: VehicleConfig[] = [];
+  /** Its own generator, so the bag does not disturb the other decisions. */
+  private readonly kindRng = new Rng(0x51c7a11e);
   private spawnTimer = 0;
   private obstacleTimer = 0;
   private readonly obstacleDistances = new Map<TrafficCar, number | null>();
@@ -254,6 +265,28 @@ export class TrafficManager {
     }
   }
 
+  /**
+   * The kind of car for the next car of the traffic.
+   *
+   * The kinds are drawn from a bag that is shuffled again when it is empty.
+   * Every kind of car comes up once per round, so the street is really
+   * mixed - a plain random number never picked the pickup, because all the
+   * numbers of the game are seeded.
+   */
+  private nextKind(): VehicleConfig {
+    if (this.kindBag.length === 0) {
+      this.kindBag.push(...AI_CARS);
+      // Fisher-Yates, with the generator of the bag.
+      for (let i = this.kindBag.length - 1; i > 0; i--) {
+        const j = this.kindRng.int(0, i);
+        const swap = this.kindBag[i];
+        this.kindBag[i] = this.kindBag[j];
+        this.kindBag[j] = swap;
+      }
+    }
+    return this.kindBag.pop() as VehicleConfig;
+  }
+
   /** Try to place one new car. */
   private spawnOne(playerX: number, playerZ: number): boolean {
     // Only the roads that are roughly in the ring around the player.
@@ -301,7 +334,7 @@ export class TrafficManager {
       }
       if (blocked) continue;
 
-      const config = AI_CARS[this.rng.int(0, AI_CARS.length - 1)];
+      const config = this.nextKind();
       const color =
         config.id === 'taxi'
           ? config.color

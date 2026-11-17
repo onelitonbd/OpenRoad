@@ -157,7 +157,8 @@ on the quality preset (Low 15, Medium 30, High 50).
 
 Six kinds of cars drive on the roads: a sedan, a hatchback, a van, a
 pickup, a taxi and a small SUV. Every kind has its own model and its own
-colour, so the street looks mixed.
+colour, so the street looks mixed. The kinds come from a shuffled bag, so
+every kind of car shows up once per round - a model is never left unused.
 
 Every car drives on a **lane** of the road network: it follows the lane,
 keeps to the right side, obeys the speed limit of the road, slows down
